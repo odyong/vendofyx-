@@ -28,7 +28,9 @@ const RatePage: React.FC = () => {
 
   useEffect(() => {
     const fetchRequest = async () => {
-      if (id?.startsWith('demo-')) {
+      if (!id) return;
+      
+      if (id.startsWith('demo-')) {
         setRequest({
           id,
           user_id: 'demo-user',
@@ -46,18 +48,23 @@ const RatePage: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('feedback_requests')
-        .select(`*, profiles (business_name, google_review_url)`)
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('feedback_requests')
+          .select(`*, profiles (business_name, google_review_url)`)
+          .eq('id', id)
+          .single();
 
-      if (error) console.error(error);
-      else setRequest(data as any);
-      setLoading(false);
+        if (error) throw error;
+        setRequest(data as any);
 
-      if (data && data.status === 'pending') {
-        await supabase.from('feedback_requests').update({ status: 'clicked' }).eq('id', id);
+        if (data && data.status === 'pending') {
+          await supabase.from('feedback_requests').update({ status: 'clicked' }).eq('id', id);
+        }
+      } catch (err) {
+        console.error("Error fetching request:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchRequest();
@@ -77,10 +84,9 @@ const RatePage: React.FC = () => {
 
   const handleRating = async (r: number) => {
     setRating(r);
-    if (r === 5) {
-      if (!id?.startsWith('demo-')) {
-        await supabase.from('feedback_requests').update({ rating: r, status: 'rated' }).eq('id', id);
-      }
+    // Auto-update to clicked/active state if not already
+    if (!id?.startsWith('demo-')) {
+       await supabase.from('feedback_requests').update({ rating: r }).eq('id', id);
     }
   };
 
@@ -91,30 +97,29 @@ const RatePage: React.FC = () => {
       feedbackText
     ].filter(Boolean).join('. ');
 
-    if (!id?.startsWith('demo-')) {
-      const { error } = await supabase.from('feedback_requests').update({
-        rating,
-        feedback_text: finalFeedback,
-        status: 'rated'
-      }).eq('id', id);
+    try {
+      if (!id?.startsWith('demo-')) {
+        const { error } = await supabase.from('feedback_requests').update({
+          rating,
+          feedback_text: finalFeedback,
+          status: 'rated'
+        }).eq('id', id);
 
-      if (error) {
-        alert(error.message);
-        setSubmitting(false);
-        return;
+        if (error) throw error;
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
-    }
 
-    if (id?.startsWith('demo-')) {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (rating === 5 && request?.profiles?.google_review_url) {
+        window.location.href = request.profiles.google_review_url;
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      alert(err.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
     }
-
-    if (rating === 5 && request?.profiles?.google_review_url) {
-      window.location.href = request.profiles.google_review_url;
-    } else {
-      setSubmitted(true);
-    }
-    setSubmitting(false);
   };
 
   const skipToGoogle = () => {
@@ -265,15 +270,6 @@ const RatePage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-charcoal-950 p-4 rounded-2xl flex items-start gap-3 border border-slate-100 dark:border-charcoal-800">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 flex-shrink-0">
-                      <ShieldCheck size={16} />
-                    </div>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
-                      This form is 100% private. Only the management of {request.profiles.business_name} will receive your comments.
-                    </p>
-                  </div>
-
                   <button
                     onClick={submitFeedback}
                     disabled={submitting}
@@ -297,7 +293,7 @@ const RatePage: React.FC = () => {
                     </div>
                     <h3 className="text-2xl font-black text-charcoal-900 dark:text-white tracking-tight">One last favor?</h3>
                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm leading-relaxed px-4">
-                      Would you mind giving us a 1-sentence shoutout before you head to Google? We'd love to share it on our wall of fame!
+                      Would you mind giving us a quick shoutout before you head to Google? We'd love to share it on our wall of fame!
                     </p>
                   </div>
 
@@ -336,13 +332,6 @@ const RatePage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-      
-      <div className="flex flex-col items-center mt-12 space-y-3 opacity-20 dark:opacity-40 group-hover:opacity-40 transition-opacity">
-        <Star className="fill-charcoal-800 dark:fill-white animate-spin-slow w-5 h-5" />
-        <p className="text-center text-slate-900 dark:text-white text-[10px] font-black uppercase tracking-[0.4em]">
-          Verified Experience via Vendofyx
-        </p>
       </div>
     </div>
   );

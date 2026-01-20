@@ -11,7 +11,6 @@ import Privacy from './components/Privacy';
 import Refund from './components/Refund';
 import { LogOut, LayoutDashboard, Star, Sun, Moon } from 'lucide-react';
 
-// Fix for links not working (scrolling to top on route change)
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -42,7 +41,6 @@ const AppContent: React.FC<{
           </div>
           <div className="relative">
             <span className="logo-text transition-all duration-300 text-3xl tracking-tighter relative z-10">Vendofyx</span>
-            {/* Multi-colored orbiting stars that appear on hover */}
             <Star className="surround-star star-1 text-blue-500 fill-blue-500" size={10} />
             <Star className="surround-star star-2 text-amber-500 fill-amber-500" size={12} />
             <Star className="surround-star star-3 text-indigo-400 fill-indigo-400" size={8} />
@@ -56,7 +54,6 @@ const AppContent: React.FC<{
           <button 
             onClick={toggleDarkMode}
             className="p-3 rounded-2xl bg-slate-100 dark:bg-charcoal-800 text-slate-600 dark:text-amber-400 hover:scale-110 active:scale-95 transition-all shadow-sm"
-            aria-label="Toggle Dark Mode"
           >
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -76,13 +73,7 @@ const AppContent: React.FC<{
           ) : (
             <Link 
               to="/auth?mode=login" 
-              className={`
-                transition-all duration-500 px-8 py-3 rounded-2xl
-                ${isAuthPage 
-                  ? 'bg-charcoal-900 dark:bg-blue-600 text-white font-black scale-110 shadow-[0_10px_30px_rgba(0,0,0,0.3)] -translate-y-1' 
-                  : 'text-slate-900 dark:text-white font-black text-lg hover:text-blue-600 hover:scale-110 active:scale-95 hover:shadow-lg'
-                }
-              `}
+              className={`transition-all duration-500 px-8 py-3 rounded-2xl ${isAuthPage ? 'bg-charcoal-900 dark:bg-blue-600 text-white font-black scale-110 shadow-xl -translate-y-1' : 'text-slate-900 dark:text-white font-black text-lg hover:text-blue-600 hover:scale-110 active:scale-95'}`}
             >
               Login
             </Link>
@@ -92,16 +83,14 @@ const AppContent: React.FC<{
     </nav>
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-charcoal-950">
-        <div className="flex flex-col items-center gap-4">
-          <Star className="w-16 h-16 text-charcoal-900 dark:text-blue-500 animate-spin fill-current" size={64} />
-          <p className="text-charcoal-900 dark:text-white font-black text-2xl animate-pulse tracking-widest uppercase">Vendofyx</p>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-charcoal-950">
+      <div className="flex flex-col items-center gap-4">
+        <Star className="w-16 h-16 text-charcoal-900 dark:text-blue-500 animate-spin fill-current" size={64} />
+        <p className="text-charcoal-900 dark:text-white font-black text-2xl animate-pulse tracking-widest uppercase">Vendofyx</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -111,10 +100,7 @@ const AppContent: React.FC<{
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={!session ? <Auth onAuthSuccess={handleAuthSuccess} /> : <Navigate to="/dashboard" />} />
-          <Route 
-            path="/dashboard" 
-            element={session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id, !!localStorage.getItem('vendofyx_mock_user'))} /> : <Navigate to="/auth" />} 
-          />
+          <Route path="/dashboard" element={session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id, !!localStorage.getItem('vendofyx_mock_user'))} /> : <Navigate to="/auth" />} />
           <Route path="/rate/:id" element={<RatePage />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -125,20 +111,15 @@ const AppContent: React.FC<{
       <footer className="bg-charcoal-900 dark:bg-charcoal-950 text-slate-400 py-16 px-4 border-t border-slate-800 dark:border-slate-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
-            <div className="flex items-center gap-2 font-black text-white text-2xl mb-6">
-              <Star className="fill-blue-500 text-blue-500" size={28} />
-              Vendofyx
-            </div>
-            <p className="text-slate-400 leading-relaxed font-medium">
-              Join the elite businesses filtering feedback and building bulletproof reputations.
-            </p>
+            <div className="flex items-center gap-2 font-black text-white text-2xl mb-6"><Star className="fill-blue-500 text-blue-500" size={28} />Vendofyx</div>
+            <p className="text-slate-400 leading-relaxed font-medium">Empowering businesses to grow their online presence with bulletproof reputation management.</p>
           </div>
           <div>
             <h4 className="text-white font-black mb-6 uppercase tracking-widest text-xs">Legal</h4>
             <ul className="space-y-3 text-sm font-medium">
-              <li><Link to="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/refund" className="hover:text-blue-400 transition-colors">Refund Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-blue-300 transition-all">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="hover:text-blue-300 transition-all">Privacy Policy</Link></li>
+              <li><Link to="/refund" className="hover:text-blue-300 transition-all">Refund Policy</Link></li>
             </ul>
           </div>
           <div>
@@ -166,59 +147,40 @@ const App: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem('vendofyx_theme') === 'dark' || 
-           (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return localStorage.getItem('vendofyx_theme') === 'dark' || (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
   });
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('vendofyx_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('vendofyx_theme', 'light');
-    }
+    if (isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('vendofyx_theme', 'dark'); } 
+    else { document.documentElement.classList.remove('dark'); localStorage.setItem('vendofyx_theme', 'light'); }
   }, [isDark]);
 
   const toggleDarkMode = () => setIsDark(!isDark);
 
   const loadProfile = async (userId: string, isDemo: boolean) => {
     if (isDemo) {
-      setProfile({
-        id: userId,
-        business_name: 'Vendofyx Demo Store',
-        google_review_url: 'https://google.com',
-        terms_url: '',
-        privacy_url: '',
-        refund_url: '',
-        paddle_sub_status: 'active',
-        created_at: new Date().toISOString()
-      });
+      setProfile({ id: userId, business_name: 'Vendofyx Demo Store', google_review_url: 'https://google.com', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'active', created_at: new Date().toISOString() });
       return;
     }
 
-    if (!isSupabaseConfigured) {
-       setProfile({ id: userId, business_name: 'My Business', google_review_url: '', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'trial', created_at: new Date().toISOString() });
-       return;
-    }
+    if (!isSupabaseConfigured) return;
 
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (error) throw error;
-      setProfile(data);
-    } catch (e) {
-      setProfile({ id: userId, business_name: 'My Business', google_review_url: '', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'trial', created_at: new Date().toISOString() });
-    }
+      if (error) {
+        // Create profile if it doesn't exist. Default to 'inactive'.
+        const newProfile = { id: userId, business_name: 'My Business', google_review_url: '', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'inactive' };
+        await supabase.from('profiles').insert(newProfile);
+        setProfile(newProfile as any);
+      } else {
+        setProfile(data);
+      }
+    } catch (e) { console.warn("Profile load failed", e); }
   };
 
   const handleAuthSuccess = async (user: any, isDemo: boolean) => {
-    setLoading(true);
-    const timeout = setTimeout(() => setLoading(false), 5000);
-    
     setSession({ user });
     await loadProfile(user.id, isDemo);
-    
-    clearTimeout(timeout);
     setLoading(false);
   };
 
@@ -226,60 +188,24 @@ const App: React.FC = () => {
     const initSession = async () => {
       const mockUserStr = localStorage.getItem('vendofyx_mock_user');
       if (mockUserStr) {
-        try {
-          const user = JSON.parse(mockUserStr);
-          await handleAuthSuccess(user, true);
-          return;
-        } catch (e) {
-          localStorage.removeItem('vendofyx_mock_user');
-        }
+        try { handleAuthSuccess(JSON.parse(mockUserStr), true); return; } 
+        catch (e) { localStorage.removeItem('vendofyx_mock_user'); }
       }
 
       if (isSupabaseConfigured) {
         try {
-          const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-          if (error) throw error;
-          
-          if (currentSession) {
-            await handleAuthSuccess(currentSession.user, false);
-          } else {
-            setLoading(false);
-          }
-        } catch (e) {
-          console.warn("Supabase session check failed.");
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (currentSession) await handleAuthSuccess(currentSession.user, false);
+          else setLoading(false);
+        } catch (e) { setLoading(false); }
+      } else { setLoading(false); }
     };
     initSession();
-
-    let authListener: any = null;
-    if (isSupabaseConfigured) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-        if (!localStorage.getItem('vendofyx_mock_user')) {
-          if (s && !session) {
-            handleAuthSuccess(s.user, false);
-          } else if (!s) {
-            setSession(null);
-            setProfile(null);
-          }
-        }
-      });
-      authListener = subscription;
-    }
-    
-    return () => authListener?.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     localStorage.removeItem('vendofyx_mock_user');
-    if (isSupabaseConfigured) {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {}
-    }
+    if (isSupabaseConfigured) await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
     window.location.hash = '#/';
@@ -287,16 +213,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-      <AppContent 
-        session={session} 
-        profile={profile} 
-        loading={loading} 
-        isDark={isDark}
-        toggleDarkMode={toggleDarkMode}
-        handleLogout={handleLogout} 
-        loadProfile={loadProfile}
-        handleAuthSuccess={handleAuthSuccess}
-      />
+      <AppContent session={session} profile={profile} loading={loading} isDark={isDark} toggleDarkMode={toggleDarkMode} handleLogout={handleLogout} loadProfile={loadProfile} handleAuthSuccess={handleAuthSuccess} />
     </HashRouter>
   );
 };
