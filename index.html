@@ -138,10 +138,12 @@
   }
 }
 </script>
+<!-- Browser-side transpiler for zero-build environments -->
+<script type="module" src="https://esm.sh/run"></script>
 </head>
 <body class="bg-slate-50 dark:bg-charcoal-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
     <div id="root"></div>
-    <!-- Explicit module entry point to fix blank page on static hosts like Netlify -->
-    <script type="module" src="./index.tsx"></script>
+    <!-- Entry point for the esm.sh loader to discover and transpile -->
+    <script type="text/babel" src="./index.tsx"></script>
 </body>
 </html>
