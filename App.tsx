@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Profile } from './types';
 import Dashboard from './components/Dashboard';
@@ -18,6 +19,18 @@ const ScrollToTop = () => {
   }, [pathname]);
   return null;
 };
+
+const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.3, ease: 'easeOut' }}
+    className="route-transition-wrapper"
+  >
+    {children}
+  </motion.div>
+);
 
 const AppContent: React.FC<{
   session: any;
@@ -51,12 +64,36 @@ const AppContent: React.FC<{
         </Link>
 
         <div className="flex items-center gap-4 md:gap-8">
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9, rotate: 180 }}
             onClick={toggleDarkMode}
-            className="p-3 rounded-2xl bg-slate-100 dark:bg-charcoal-800 text-slate-600 dark:text-amber-400 hover:scale-110 active:scale-95 transition-all shadow-sm"
+            className="p-3 rounded-2xl bg-slate-100 dark:bg-charcoal-800 text-slate-600 dark:text-amber-400 shadow-sm overflow-hidden"
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+            <AnimatePresence mode="wait">
+              {isDark ? (
+                <motion.div
+                  key="sun"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Sun size={20} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="moon"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Moon size={20} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
 
           {session ? (
             <>
@@ -97,22 +134,24 @@ const AppContent: React.FC<{
       <ScrollToTop />
       <Navbar />
       <main className="flex-grow dark:bg-charcoal-950 transition-colors duration-300">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={!session ? <Auth onAuthSuccess={handleAuthSuccess} /> : <Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id, !!localStorage.getItem('vendofyx_mock_user'))} /> : <Navigate to="/auth" />} />
-          <Route path="/rate/:id" element={<RatePage />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/refund" element={<Refund />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+            <Route path="/auth" element={<PageWrapper>{!session ? <Auth onAuthSuccess={handleAuthSuccess} /> : <Navigate to="/dashboard" />}</PageWrapper>} />
+            <Route path="/dashboard" element={<PageWrapper>{session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id, !!localStorage.getItem('vendofyx_mock_user'))} /> : <Navigate to="/auth" />}</PageWrapper>} />
+            <Route path="/rate/:id" element={<PageWrapper><RatePage /></PageWrapper>} />
+            <Route path="/terms" element={<PageWrapper><Terms /></PageWrapper>} />
+            <Route path="/privacy" element={<PageWrapper><Privacy /></PageWrapper>} />
+            <Route path="/refund" element={<PageWrapper><Refund /></PageWrapper>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
       </main>
       <footer className="bg-charcoal-900 dark:bg-charcoal-950 text-slate-400 py-16 px-4 border-t border-slate-800 dark:border-slate-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 font-black text-white text-2xl mb-6"><Star className="fill-blue-500 text-blue-500" size={28} />Vendofyx</div>
-            <p className="text-slate-400 leading-relaxed font-medium">Empowering businesses to grow their online presence with bulletproof reputation management.</p>
+            <p className="text-slate-400 leading-relaxed font-medium text-sm">Join elite businesses protecting their brand and scaling their public trust with smart feedback logic.</p>
           </div>
           <div>
             <h4 className="text-white font-black mb-6 uppercase tracking-widest text-xs">Legal</h4>
@@ -168,7 +207,6 @@ const App: React.FC = () => {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
       if (error) {
-        // Create profile if it doesn't exist. Default to 'inactive'.
         const newProfile = { id: userId, business_name: 'My Business', google_review_url: '', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'inactive' };
         await supabase.from('profiles').insert(newProfile);
         setProfile(newProfile as any);

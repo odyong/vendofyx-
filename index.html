@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    <!-- Paddle.js v2 -->
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
     <style>
         :root {
             --font-main: 'Plus Jakarta Sans', sans-serif;
@@ -24,38 +26,6 @@
             letter-spacing: -0.04em !important;
         }
         
-        /* Main Star Animation: High-Fidelity Rainbow Cycle */
-        @keyframes magic-morph {
-          0% { transform: rotate(0deg) scale(1); fill: #3b82f6; }
-          20% { fill: #8b5cf6; }
-          40% { fill: #ec4899; }
-          60% { transform: rotate(180deg) scale(1.2); fill: #f59e0b; }
-          80% { fill: #10b981; }
-          100% { transform: rotate(360deg) scale(1); fill: #3b82f6; }
-        }
-
-        /* Main Star Vertical Bouncing */
-        @keyframes magic-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-
-        /* Sophisticated Text Bounce */
-        @keyframes text-pop-bounce {
-          0%, 100% { transform: scale(1) translateY(0) rotate(0deg); }
-          50% { transform: scale(1.12) translateY(-6px) rotate(1deg); }
-        }
-
-        /* Centered Rectangular Path for Orbiting Stars */
-        @keyframes rect-path {
-          0% { transform: translate(-85px, -24px); }
-          25% { transform: translate(85px, -24px); }
-          50% { transform: translate(85px, 24px); }
-          75% { transform: translate(-85px, 24px); }
-          100% { transform: translate(-85px, -24px); }
-        }
-
-        /* Progress Bar Animation */
         @keyframes progress-fill {
           0% { width: 0%; opacity: 0.8; }
           50% { opacity: 1; }
@@ -66,7 +36,29 @@
           animation: progress-fill 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
-        /* Orbiting Stars Configuration */
+        @keyframes magic-morph {
+          0% { transform: rotate(0deg) scale(1); fill: #3b82f6; }
+          60% { transform: rotate(180deg) scale(1.2); fill: #f59e0b; }
+          100% { transform: rotate(360deg) scale(1); fill: #3b82f6; }
+        }
+
+        @keyframes magic-bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+
+        .logo-container:hover .main-star {
+          animation: magic-morph 2s linear infinite, magic-bounce 1.2s ease-in-out infinite;
+        }
+
+        @keyframes rect-path {
+          0% { transform: translate(-85px, -24px); }
+          25% { transform: translate(85px, -24px); }
+          50% { transform: translate(85px, 24px); }
+          75% { transform: translate(-85px, 24px); }
+          100% { transform: translate(-85px, -24px); }
+        }
+
         .surround-star {
           position: absolute;
           top: 50%;
@@ -80,22 +72,11 @@
           z-index: 0;
         }
 
-        /* Hover Interaction Triggers */
-        .logo-container:hover .main-star {
-          animation: magic-morph 2s linear infinite, magic-bounce 1.2s ease-in-out infinite;
-        }
-
-        .logo-container:hover .logo-text {
-          animation: text-pop-bounce 1s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
-          color: #2563eb;
-        }
-
         .logo-container:hover .surround-star {
           opacity: 1;
           transform: scale(1);
         }
 
-        /* Rectangular Path Assignments with offset delays */
         .star-1 { animation: rect-path 5s linear infinite; }
         .star-2 { animation: rect-path 5s linear infinite; animation-delay: -0.8s; }
         .star-3 { animation: rect-path 5s linear infinite; animation-delay: -1.6s; }
@@ -103,91 +84,19 @@
         .star-5 { animation: rect-path 5s linear infinite; animation-delay: -3.2s; }
         .star-6 { animation: rect-path 5s linear infinite; animation-delay: -4s; }
 
-        /* Demo Tour Animations */
-        @keyframes cursor-tour {
-          0% { top: 90%; left: 10%; transform: scale(1); opacity: 0; }
-          5% { top: 90%; left: 10%; transform: scale(1); opacity: 1; }
-          15% { top: 35%; left: 45%; transform: scale(1); }
-          18% { top: 35%; left: 45%; transform: scale(0.9); }
-          20% { top: 35%; left: 45%; transform: scale(1); }
-          35% { top: 60%; left: 50%; transform: scale(1); }
-          38% { top: 60%; left: 50%; transform: scale(0.8); }
-          40% { top: 60%; left: 50%; transform: scale(1); }
-          55% { top: 80%; left: 30%; transform: scale(1); }
-          58% { top: 80%; left: 30%; transform: scale(0.8); }
-          60% { top: 80%; left: 30%; transform: scale(1); }
-          80% { top: 50%; left: 50%; transform: scale(1); opacity: 1; }
-          90% { top: 50%; left: 50%; transform: scale(1.5); opacity: 0; }
-          100% { top: 90%; left: 10%; opacity: 0; }
-        }
-
-        @keyframes type-text {
-          0%, 15% { width: 0; opacity: 0; }
-          30%, 100% { width: 100%; opacity: 1; }
-        }
-
-        @keyframes reveal-card {
-          0%, 40% { opacity: 0; transform: translateY(10px); }
-          50%, 90% { opacity: 1; transform: translateY(0); }
-          95%, 100% { opacity: 0; transform: translateY(-10px); }
-        }
-
-        @keyframes star-sequence {
-          0%, 65% { opacity: 0; transform: scale(0.5); }
-          75%, 95% { opacity: 1; transform: scale(1.2); }
-          100% { opacity: 0; transform: scale(0.8); }
-        }
-
-        @keyframes google-stars-increase {
-          0%, 75% { content: "1.2 ★"; color: #94a3b8; }
-          85%, 100% { content: "5.0 ★"; color: #f59e0b; }
-        }
-
-        .animate-type-text { animation: type-text 8s infinite; overflow: hidden; white-space: nowrap; }
-        .animate-reveal-card { animation: reveal-card 8s infinite; }
-        .animate-cursor-tour { animation: cursor-tour 8s infinite ease-in-out; }
-        .animate-stars-success { animation: star-sequence 8s infinite; }
-        .google-score::after { content: "1.2 ★"; animation: google-stars-increase 8s infinite; }
-
-        @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-          50% { box-shadow: 0 0 20px 10px rgba(37, 99, 235, 0); }
-        }
-        .demo-glow { animation: glow-pulse 2s infinite; }
-
-        @keyframes thunder-strike {
-          0% { opacity: 0; transform: scaleY(0) translateY(-50px); filter: brightness(3); }
-          10% { opacity: 1; transform: scaleY(1.2) translateY(0); filter: brightness(10); }
-          20% { opacity: 0.8; transform: scaleY(1); filter: brightness(5); }
-          30% { opacity: 1; transform: scaleY(1.1); filter: brightness(8); }
-          100% { opacity: 0; transform: scaleY(2) translateY(50px); filter: brightness(1); }
-        }
-
         @keyframes star-burst-out {
           0% { transform: translate(0, 0) scale(0); opacity: 0; }
           10% { opacity: 1; }
           100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); opacity: 0; }
         }
-
-        @keyframes star-orbit-magic {
-          0% { transform: rotate(var(--rotation)) translate(0, 0) scale(0); opacity: 0; }
-          15% { opacity: 1; transform: rotate(var(--rotation)) translate(60px, 0) scale(1); }
-          80% { opacity: 1; transform: rotate(calc(var(--rotation) + 360deg)) translate(90px, 0) scale(1.2); }
-          100% { transform: rotate(calc(var(--rotation) + 540deg)) translate(150px, 0) scale(0); opacity: 0; }
-        }
-
-        .animate-thunder {
-          animation: thunder-strike 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-
         .animate-star-burst {
           animation: star-burst-out 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         }
 
-        .animate-star-orbit-magic {
-          animation: star-orbit-magic 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        .route-transition-wrapper {
+            position: relative;
+            width: 100%;
         }
-
     </style>
     <script>
       tailwind.config = {
@@ -224,7 +133,8 @@
     "react": "https://esm.sh/react@^19.2.3",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0"
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.0.0"
   }
 }
 </script>
