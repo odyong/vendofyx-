@@ -141,5 +141,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-charcoal-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
     <div id="root"></div>
+    <!-- Explicit module entry point to fix blank page on static hosts like Netlify -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

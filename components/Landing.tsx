@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase, isSupabaseConfigured } from '../supabase';
+import { supabase, isSupabaseConfigured } from '../supabase.ts';
 import { CheckCircle, Shield, TrendingUp, Star, Smartphone, MessageCircle, ArrowRight, Zap, Quote, ChevronLeft, ChevronRight, BadgeCheck, Zap as Lightning, Check, HelpCircle, Sparkles, Percent, ShieldCheck } from 'lucide-react';
 
 interface Testimonial {
@@ -168,29 +168,26 @@ const TestimonialCarousel: React.FC = () => {
   );
 };
 
-const MagicJoinButton: React.FC<{ children: React.ReactNode, onClick?: () => void }> = ({ children, onClick }) => {
+const MagicJoinButton: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isJoining, setIsJoining] = useState(false);
-  const navigate = useNavigate();
 
-  const handleJoin = (e: React.MouseEvent) => {
+  const handleActivate = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (onClick) {
-      onClick();
-      return;
-    }
-    if (isJoining) return;
     setIsJoining(true);
     
+    // Smooth scroll to pricing section
+    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+    
     setTimeout(() => {
-      navigate('/auth?mode=signup');
-    }, 1000);
+      setIsJoining(false);
+    }, 1500);
   };
 
   const starColors = ['text-blue-400', 'text-amber-400', 'text-indigo-400', 'text-purple-400', 'text-emerald-400', 'text-rose-400'];
 
   return (
     <button
-      onClick={handleJoin}
+      onClick={handleActivate}
       className="group relative bg-blue-600 text-white px-12 py-5 rounded-2xl font-black text-2xl hover:bg-blue-500 hover:shadow-[0_0_50px_rgba(37,99,235,0.4)] hover:-translate-y-1 transition-all transform active:scale-95 overflow-hidden w-full sm:w-auto"
     >
       <div className="relative z-20 flex items-center justify-center gap-3">
@@ -326,9 +323,8 @@ const PricingSection = () => {
              </ul>
           </div>
           
-          <div className="relative z-10">
-            <MagicJoinButton>Get Pro Annual</MagicJoinButton>
-          </div>
+          <Link to="/auth?mode=signup" className="relative z-10 block w-full text-center py-6 bg-white text-blue-600 rounded-[2rem] font-black text-xl hover:bg-slate-50 transition-all active:scale-95 shadow-xl">Get Pro Annual</Link>
+          
           <div className="mt-6 flex items-center justify-center gap-2 opacity-60 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">
              <ShieldCheck size={14} /> Secure Billed Annually
           </div>
@@ -439,7 +435,7 @@ const Landing: React.FC = () => {
             The ethical "gate" for your customer reviews. Funnel positive sentiment to Google and capture negative feedback privately.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <MagicJoinButton>Start Professional Suite</MagicJoinButton>
+            <MagicJoinButton>Activate Professional Suite</MagicJoinButton>
             <button onClick={scrollToFeatures} className="bg-white dark:bg-charcoal-900 text-slate-700 dark:text-slate-300 border-2 border-slate-100 dark:border-slate-800 px-10 py-5 rounded-2xl font-black text-xl hover:bg-slate-50 dark:hover:bg-charcoal-800 hover:shadow-xl transition-all transform hover:-translate-y-1">Explore Tech</button>
           </div>
         </div>

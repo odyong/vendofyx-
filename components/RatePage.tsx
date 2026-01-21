@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../supabase';
-import { FeedbackWithProfile } from '../types';
+import { supabase } from '../supabase.ts';
+import { FeedbackWithProfile } from '../types.ts';
 import { Star, MessageSquare, Send, CheckCircle2, ChevronLeft, AlertCircle, ShieldCheck, Timer, Utensils, User, HelpCircle, ExternalLink } from 'lucide-react';
 
 const RatePage: React.FC = () => {
@@ -30,24 +30,6 @@ const RatePage: React.FC = () => {
     const fetchRequest = async () => {
       if (!id) return;
       
-      if (id.startsWith('demo-')) {
-        setRequest({
-          id,
-          user_id: 'demo-user',
-          customer_name: 'Demo Customer',
-          status: 'pending',
-          rating: null,
-          feedback_text: null,
-          created_at: new Date().toISOString(),
-          profiles: {
-            business_name: 'Vendofyx Demo Store',
-            google_review_url: 'https://google.com'
-          }
-        });
-        setLoading(false);
-        return;
-      }
-
       try {
         const { data, error } = await supabase
           .from('feedback_requests')
@@ -84,8 +66,7 @@ const RatePage: React.FC = () => {
 
   const handleRating = async (r: number) => {
     setRating(r);
-    // Auto-update to clicked/active state if not already
-    if (!id?.startsWith('demo-')) {
+    if (id) {
        await supabase.from('feedback_requests').update({ rating: r }).eq('id', id);
     }
   };
@@ -98,7 +79,7 @@ const RatePage: React.FC = () => {
     ].filter(Boolean).join('. ');
 
     try {
-      if (!id?.startsWith('demo-')) {
+      if (id) {
         const { error } = await supabase.from('feedback_requests').update({
           rating,
           feedback_text: finalFeedback,
@@ -106,8 +87,6 @@ const RatePage: React.FC = () => {
         }).eq('id', id);
 
         if (error) throw error;
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
       if (rating === 5 && request?.profiles?.google_review_url) {

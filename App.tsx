@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase, isSupabaseConfigured } from './supabase';
-import { Profile } from './types';
-import Dashboard from './components/Dashboard';
-import RatePage from './components/RatePage';
-import Auth from './components/Auth';
-import Landing from './components/Landing';
-import Terms from './components/Terms';
-import Privacy from './components/Privacy';
-import Refund from './components/Refund';
-import { LogOut, LayoutDashboard, Star, Sun, Moon } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from './supabase.ts';
+import { Profile } from './types.ts';
+import Dashboard from './components/Dashboard.tsx';
+import RatePage from './components/RatePage.tsx';
+import Auth from './components/Auth.tsx';
+import Landing from './components/Landing.tsx';
+import Terms from './components/Terms.tsx';
+import Privacy from './components/Privacy.tsx';
+import Refund from './components/Refund.tsx';
+import { LogOut, LayoutDashboard, Star, Sun, Moon, ShieldCheck, HelpCircle, FileText, Globe } from 'lucide-react';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -39,8 +39,8 @@ const AppContent: React.FC<{
   isDark: boolean;
   toggleDarkMode: () => void;
   handleLogout: () => void;
-  loadProfile: (id: string, isDemo: boolean) => void;
-  handleAuthSuccess: (user: any, isDemo: boolean) => void;
+  loadProfile: (id: string) => void;
+  handleAuthSuccess: (user: any) => void;
 }> = ({ session, profile, loading, isDark, toggleDarkMode, handleLogout, loadProfile, handleAuthSuccess }) => {
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth';
@@ -72,25 +72,9 @@ const AppContent: React.FC<{
           >
             <AnimatePresence mode="wait">
               {isDark ? (
-                <motion.div
-                  key="sun"
-                  initial={{ opacity: 0, rotate: -90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Sun size={20} />
-                </motion.div>
+                <motion.div key="sun" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 90 }} transition={{ duration: 0.2 }}><Sun size={20} /></motion.div>
               ) : (
-                <motion.div
-                  key="moon"
-                  initial={{ opacity: 0, rotate: -90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Moon size={20} />
-                </motion.div>
+                <motion.div key="moon" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 90 }} transition={{ duration: 0.2 }}><Moon size={20} /></motion.div>
               )}
             </AnimatePresence>
           </motion.button>
@@ -100,18 +84,12 @@ const AppContent: React.FC<{
               <Link to="/dashboard" className={`flex items-center gap-1 font-bold transition-all hover:text-blue-600 ${location.pathname === '/dashboard' ? 'text-blue-600 scale-105 underline decoration-2 underline-offset-4' : 'text-slate-600 dark:text-slate-400'}`}>
                 <LayoutDashboard size={20} /> <span className="hidden sm:inline">Dashboard</span>
               </Link>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center gap-1 font-bold text-slate-600 dark:text-slate-400 hover:text-red-600 transition-all hover:scale-105"
-              >
+              <button onClick={handleLogout} className="flex items-center gap-1 font-bold text-slate-600 dark:text-slate-400 hover:text-red-600 transition-all hover:scale-105">
                 <LogOut size={20} /> <span className="hidden sm:inline">Sign Out</span>
               </button>
             </>
           ) : (
-            <Link 
-              to="/auth?mode=login" 
-              className={`transition-all duration-500 px-8 py-3 rounded-2xl ${isAuthPage ? 'bg-charcoal-900 dark:bg-blue-600 text-white font-black scale-110 shadow-xl -translate-y-1' : 'text-slate-900 dark:text-white font-black text-lg hover:text-blue-600 hover:scale-110 active:scale-95'}`}
-            >
+            <Link to="/auth?mode=login" className={`transition-all duration-500 px-8 py-3 rounded-2xl ${isAuthPage ? 'bg-charcoal-900 dark:bg-blue-600 text-white font-black scale-110 shadow-xl -translate-y-1' : 'text-slate-900 dark:text-white font-black text-lg hover:text-blue-600 hover:scale-110 active:scale-95'}`}>
               Login
             </Link>
           )}
@@ -138,7 +116,7 @@ const AppContent: React.FC<{
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
             <Route path="/auth" element={<PageWrapper>{!session ? <Auth onAuthSuccess={handleAuthSuccess} /> : <Navigate to="/dashboard" />}</PageWrapper>} />
-            <Route path="/dashboard" element={<PageWrapper>{session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id, !!localStorage.getItem('vendofyx_mock_user'))} /> : <Navigate to="/auth" />}</PageWrapper>} />
+            <Route path="/dashboard" element={<PageWrapper>{session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id)} /> : <Navigate to="/auth" />}</PageWrapper>} />
             <Route path="/rate/:id" element={<PageWrapper><RatePage /></PageWrapper>} />
             <Route path="/terms" element={<PageWrapper><Terms /></PageWrapper>} />
             <Route path="/privacy" element={<PageWrapper><Privacy /></PageWrapper>} />
@@ -147,34 +125,42 @@ const AppContent: React.FC<{
           </Routes>
         </AnimatePresence>
       </main>
-      <footer className="bg-charcoal-900 dark:bg-charcoal-950 text-slate-400 py-16 px-4 border-t border-slate-800 dark:border-slate-900 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div>
-            <div className="flex items-center gap-2 font-black text-white text-2xl mb-6"><Star className="fill-blue-500 text-blue-500" size={28} />Vendofyx</div>
-            <p className="text-slate-400 leading-relaxed font-medium text-sm">Join elite businesses protecting their brand and scaling their public trust with smart feedback logic.</p>
+      <footer className="bg-charcoal-900 dark:bg-charcoal-950 text-slate-400 py-24 px-6 border-t border-slate-800 dark:border-slate-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 font-black text-white text-3xl mb-6"><Star className="fill-blue-500 text-blue-500" size={32} />Vendofyx</div>
+            <p className="text-slate-400 leading-relaxed font-bold text-sm">Empowering elite brands to filter sentiment, capture feedback, and scale public trust with automated logic.</p>
+            <div className="flex gap-4">
+               <div className="p-2 bg-slate-800 rounded-lg hover:text-blue-400 cursor-pointer transition-colors"><Globe size={18} /></div>
+               <div className="p-2 bg-slate-800 rounded-lg hover:text-blue-400 cursor-pointer transition-colors"><ShieldCheck size={18} /></div>
+            </div>
           </div>
           <div>
-            <h4 className="text-white font-black mb-6 uppercase tracking-widest text-xs">Legal</h4>
-            <ul className="space-y-3 text-sm font-medium">
-              <li><Link to="/terms" className="hover:text-blue-300 transition-all">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-blue-300 transition-all">Privacy Policy</Link></li>
-              <li><Link to="/refund" className="hover:text-blue-300 transition-all">Refund Policy</Link></li>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Merchant Legal</h4>
+            <ul className="space-y-4 text-sm font-black uppercase tracking-widest">
+              <li><Link to="/terms" className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-all"><FileText size={16} /> Terms of Service</Link></li>
+              <li><Link to="/privacy" className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-all"><ShieldCheck size={16} /> Privacy Policy</Link></li>
+              <li><Link to="/refund" className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-all"><HelpCircle size={16} /> Refund Policy</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-black mb-6 uppercase tracking-widest text-xs">Platform</h4>
-            <ul className="space-y-3 text-sm font-medium">
-              <li><Link to="/auth?mode=signup" className="hover:text-blue-400 transition-colors">Sign Up</Link></li>
-              <li><Link to="/dashboard" className="hover:text-blue-400 transition-colors">Dashboard</Link></li>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Cloud Console</h4>
+            <ul className="space-y-4 text-sm font-black uppercase tracking-widest">
+              <li><Link to="/auth?mode=signup" className="text-slate-500 hover:text-blue-400 transition-colors">Developer Portal</Link></li>
+              <li><Link to="/dashboard" className="text-slate-500 hover:text-blue-400 transition-colors">Control Center</Link></li>
+              <li><Link to="/auth?mode=login" className="text-slate-500 hover:text-blue-400 transition-colors">Identity Access</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-black mb-6 uppercase tracking-widest text-xs">Support</h4>
-            <a href="mailto:support@vendofyx.com" className="text-sm font-medium hover:text-blue-400 transition-colors">support@vendofyx.com</a>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Technical Support</h4>
+            <div className="space-y-6">
+              <p className="text-sm font-bold text-slate-500">Global response time: &lt; 2 hours.</p>
+              <a href="mailto:support@vendofyx.com" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">Email Support</a>
+            </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-800 dark:border-slate-900 text-center text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
-          &copy; {new Date().getFullYear()} Vendofyx. All rights reserved.
+        <div className="max-w-7xl mx-auto mt-24 pt-12 border-t border-slate-800/50 dark:border-slate-900 text-center text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">
+          &copy; {new Date().getFullYear()} Vendofyx Core Labs. Deploying Trust Everywhere.
         </div>
       </footer>
     </div>
@@ -185,23 +171,33 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem('vendofyx_theme') === 'dark' || (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    try {
+      return localStorage.getItem('vendofyx_theme') === 'dark' || 
+             (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    } catch (e) {
+      return false;
+    }
   });
 
   useEffect(() => {
-    if (isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('vendofyx_theme', 'dark'); } 
-    else { document.documentElement.classList.remove('dark'); localStorage.setItem('vendofyx_theme', 'light'); }
+    try {
+      if (isDark) { 
+        document.documentElement.classList.add('dark'); 
+        localStorage.setItem('vendofyx_theme', 'dark'); 
+      } else { 
+        document.documentElement.classList.remove('dark'); 
+        localStorage.setItem('vendofyx_theme', 'light'); 
+      }
+    } catch (e) {
+      console.warn("Local storage access denied.");
+    }
   }, [isDark]);
 
   const toggleDarkMode = () => setIsDark(!isDark);
 
-  const loadProfile = async (userId: string, isDemo: boolean) => {
-    if (isDemo) {
-      setProfile({ id: userId, business_name: 'Vendofyx Demo Store', google_review_url: 'https://google.com', terms_url: '', privacy_url: '', refund_url: '', paddle_sub_status: 'active', created_at: new Date().toISOString() });
-      return;
-    }
-
+  const loadProfile = async (userId: string) => {
     if (!isSupabaseConfigured) return;
 
     try {
@@ -216,24 +212,18 @@ const App: React.FC = () => {
     } catch (e) { console.warn("Profile load failed", e); }
   };
 
-  const handleAuthSuccess = async (user: any, isDemo: boolean) => {
+  const handleAuthSuccess = async (user: any) => {
     setSession({ user });
-    await loadProfile(user.id, isDemo);
+    await loadProfile(user.id);
     setLoading(false);
   };
 
   useEffect(() => {
     const initSession = async () => {
-      const mockUserStr = localStorage.getItem('vendofyx_mock_user');
-      if (mockUserStr) {
-        try { handleAuthSuccess(JSON.parse(mockUserStr), true); return; } 
-        catch (e) { localStorage.removeItem('vendofyx_mock_user'); }
-      }
-
       if (isSupabaseConfigured) {
         try {
           const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (currentSession) await handleAuthSuccess(currentSession.user, false);
+          if (currentSession) await handleAuthSuccess(currentSession.user);
           else setLoading(false);
         } catch (e) { setLoading(false); }
       } else { setLoading(false); }
@@ -242,7 +232,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleLogout = async () => {
-    localStorage.removeItem('vendofyx_mock_user');
     if (isSupabaseConfigured) await supabase.auth.signOut();
     setSession(null);
     setProfile(null);

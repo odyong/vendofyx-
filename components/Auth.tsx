@@ -1,66 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase, isSupabaseConfigured } from '../supabase';
-import { Mail, Lock, ShieldCheck, Star, Zap, Smartphone, ArrowLeft, Loader2, UserPlus, LogIn } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../supabase.ts';
+import { Mail, Lock, ShieldCheck, Star, Zap, Smartphone, ArrowLeft, Loader2, UserPlus, LogIn, CheckCircle2, Inbox } from 'lucide-react';
 
 interface Props {
-  onAuthSuccess: (user: any, isDemo: boolean) => void;
+  onAuthSuccess: (user: any) => void;
 }
-
-const DemoTourPreview = () => (
-  <div className="relative w-full h-64 bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden mb-6 group/demo shadow-2xl">
-    <div className="absolute inset-0 bg-gradient-to-br from-charcoal-900 to-black opacity-50"></div>
-    <div className="relative p-6 space-y-4 z-10">
-      <div className="flex justify-between items-center mb-4">
-        <div className="w-1/3 h-2 bg-slate-700 rounded-full"></div>
-        <div className="google-score text-[10px] font-black tracking-tighter text-amber-500">5.0 ★</div>
-      </div>
-      <div className="relative w-full h-10 bg-white dark:bg-charcoal-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 flex items-center overflow-hidden shadow-sm">
-        <span className="text-xs text-slate-900 dark:text-white font-bold animate-type-text">Happy Customer Experience</span>
-        <div className="w-[1px] h-4 bg-blue-500 animate-pulse ml-0.5"></div>
-      </div>
-      <div className="w-full h-10 bg-blue-600 rounded-xl flex items-center justify-center gap-2 shadow-lg">
-        <div className="w-24 h-2 bg-white/40 rounded-full"></div>
-      </div>
-      <div className="animate-reveal-card bg-charcoal-800/80 backdrop-blur-md p-3 rounded-xl border border-slate-700 shadow-xl flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Smartphone size={14} className="text-blue-400" />
-          <div className="w-32 h-2 bg-slate-600 rounded-full"></div>
-        </div>
-        <div className="w-5 h-5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.5)]"></div>
-      </div>
-    </div>
-  </div>
-);
 
 const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const [isLogin, setIsLogin] = useState(queryParams.get('mode') !== 'signup');
+  const [isEmailSent, setIsEmailSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSandboxLogin = () => {
-    setLoading(true);
-    const mockUser = {
-      id: 'demo-user-' + Math.random().toString(36).substr(2, 9),
-      email: 'demo@vendofyx.com',
-      user_metadata: { full_name: 'Demo User' }
-    };
-    localStorage.setItem('vendofyx_mock_user', JSON.stringify(mockUser));
-    setTimeout(() => {
-      onAuthSuccess(mockUser, true);
-      navigate('/dashboard');
-    }, 1000);
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSupabaseConfigured) {
-      setError("Database connection is not configured yet. Please use Sandbox Mode.");
+      setError("Database connection is not configured yet.");
       return;
     }
     setLoading(true);
@@ -70,7 +31,8 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        onAuthSuccess(data.user, false);
+        onAuthSuccess(data.user);
+        navigate('/dashboard');
       } else {
         const { data, error } = await supabase.auth.signUp({ 
           email, 
@@ -78,15 +40,46 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
           options: { data: { business_name: 'My New Business' } }
         });
         if (error) throw error;
-        alert("Verification email sent! Please check your inbox.");
+        
+        if (data.session) {
+          onAuthSuccess(data.user);
+          navigate('/dashboard');
+        } else {
+          setIsEmailSent(true);
+        }
       }
-      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (isEmailSent) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-charcoal-900 p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-8 animate-in zoom-in duration-300">
+          <div className="bg-blue-50 dark:bg-blue-950/30 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <Inbox size={48} className="text-blue-600 dark:text-blue-400 animate-bounce" />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tighter uppercase">Check Your Inbox</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+              We've sent a verification link to <br/><span className="text-charcoal-900 dark:text-white font-bold break-all">{email}</span>.
+            </p>
+          </div>
+          <div className="p-6 bg-slate-50 dark:bg-charcoal-950/50 rounded-2xl text-xs font-bold text-slate-400 text-left space-y-2">
+            <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Click the link to activate your account.</div>
+            <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Once confirmed, return here to log in.</div>
+          </div>
+          <div className="pt-4 flex flex-col gap-3">
+             <button onClick={() => window.location.reload()} className="w-full bg-charcoal-900 dark:bg-blue-600 text-white py-4 rounded-2xl font-black text-lg hover:shadow-xl transition-all active:scale-95 shadow-lg">Verified? Log In Now</button>
+             <button onClick={() => setIsEmailSent(false)} className="text-slate-400 hover:text-blue-600 font-black text-[10px] uppercase tracking-widest transition-colors">Wait, I used the wrong email</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
@@ -103,14 +96,12 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
             </p>
           </div>
 
-          <DemoTourPreview />
-
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
               <Star className="text-amber-400 fill-amber-400 mb-2" size={20} />
               <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Filter 1-3 Stars</p>
             </div>
-            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
               <Zap className="text-blue-500 fill-blue-500 mb-2" size={20} />
               <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Boost 5 Stars</p>
             </div>
@@ -181,19 +172,6 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
                 {isLogin ? 'Sign up for free' : 'Login now'}
               </button>
             </p>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100 dark:border-charcoal-800"></div></div>
-              <div className="relative flex justify-center text-xs uppercase font-black tracking-widest text-slate-300 bg-white dark:bg-charcoal-900 px-4">Instant Preview</div>
-            </div>
-
-            <button 
-              onClick={handleSandboxLogin}
-              className="w-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-100 transition-all group"
-            >
-              <Zap size={18} className="fill-current group-hover:scale-125 transition-transform" />
-              Quick Sandbox Login
-            </button>
           </div>
         </div>
       </div>
