@@ -119,7 +119,7 @@ const AppContent: React.FC<{
             <Route path="/dashboard" element={<PageWrapper>{session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id)} /> : <Navigate to="/auth" />}</PageWrapper>} />
             <Route path="/rate/:id" element={<PageWrapper><RatePage /></PageWrapper>} />
             <Route path="/terms" element={<PageWrapper><Terms /></PageWrapper>} />
-            <Route path="/privacy" element={<PageWrapper><Privacy /></Route>} />
+            <Route path="/privacy" element={<PageWrapper><Privacy /></PageWrapper>} />
             <Route path="/refund" element={<PageWrapper><Refund /></PageWrapper>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -136,7 +136,7 @@ const AppContent: React.FC<{
             </div>
           </div>
           <div>
-            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Merchant Legal</h4>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Legal Info</h4>
             <ul className="space-y-4 text-sm font-black uppercase tracking-widest">
               <li><Link to="/terms" className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-all"><FileText size={16} /> Terms of Service</Link></li>
               <li><Link to="/privacy" className="flex items-center gap-2 text-slate-500 hover:text-blue-400 transition-all"><ShieldCheck size={16} /> Privacy Policy</Link></li>
@@ -144,15 +144,15 @@ const AppContent: React.FC<{
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Cloud Console</h4>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">My Account</h4>
             <ul className="space-y-4 text-sm font-black uppercase tracking-widest">
-              <li><Link to="/auth?mode=signup" className="text-slate-500 hover:text-blue-400 transition-colors">Developer Portal</Link></li>
-              <li><Link to="/dashboard" className="text-slate-500 hover:text-blue-400 transition-colors">Control Center</Link></li>
-              <li><Link to="/auth?mode=login" className="text-slate-500 hover:text-blue-400 transition-colors">Identity Access</Link></li>
+              <li><Link to="/auth?mode=signup" className="text-slate-500 hover:text-blue-400 transition-colors">Sign Up</Link></li>
+              <li><Link to="/dashboard" className="text-slate-500 hover:text-blue-400 transition-colors">Go to Dashboard</Link></li>
+              <li><Link to="/auth?mode=login" className="text-slate-500 hover:text-blue-400 transition-colors">Login</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Technical Support</h4>
+            <h4 className="text-white font-black mb-8 uppercase tracking-widest text-[10px]">Support</h4>
             <div className="space-y-6">
               <p className="text-sm font-bold text-slate-500">Global response time: &lt; 2 hours.</p>
               <a href="mailto:support@vendofyx.com" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">Email Support</a>
@@ -160,7 +160,7 @@ const AppContent: React.FC<{
           </div>
         </div>
         <div className="max-w-7xl mx-auto mt-24 pt-12 border-t border-slate-800/50 dark:border-slate-900 text-center text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">
-          &copy; {new Date().getFullYear()} Vendofyx Core Labs. Deploying Trust Everywhere.
+          &copy; {new Date().getFullYear()} Vendofyx. All Rights Reserved.
         </div>
       </footer>
     </div>
@@ -219,16 +219,40 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    // 1. Initial session check
     const initSession = async () => {
       if (isSupabaseConfigured) {
         try {
           const { data: { session: currentSession } } = await supabase.auth.getSession();
-          if (currentSession) await handleAuthSuccess(currentSession.user);
-          else setLoading(false);
-        } catch (e) { setLoading(false); }
-      } else { setLoading(false); }
+          if (currentSession) {
+            await handleAuthSuccess(currentSession.user);
+          } else {
+            setLoading(false);
+          }
+        } catch (e) { 
+          setLoading(false); 
+        }
+      } else { 
+        setLoading(false); 
+      }
     };
+
     initSession();
+
+    // 2. Listen for auth changes (crucial for OAuth redirects)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      if (currentSession) {
+        // If we have a session (e.g., after returning from Google), handle it
+        await handleAuthSuccess(currentSession.user);
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {

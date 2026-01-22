@@ -78,7 +78,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
 
   const isPro = profile?.paddle_sub_status === 'active' || profile?.paddle_sub_status === 'active_annual';
   const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-  const logContainerRef = useRef<HTMLDivElement>(null);
 
   const addLog = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     setLogs(prev => [{
@@ -103,42 +102,31 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
   };
 
   const runDiagnostics = () => {
-    addLog("🔍 Starting System Diagnostics...", "info");
+    addLog("Checking environment...", "info");
     if (window.Paddle) {
-      addLog("✅ Paddle SDK detected on global window", "success");
-      addLog(`🔑 Client Token active: ${PADDLE_CLIENT_TOKEN.substring(0, 8)}...`, "info");
-      addLog("🌍 Environment: Production", "info");
       setPaddleStatus('ready');
     } else {
-      addLog("❌ Paddle SDK missing from environment", "error");
       setPaddleStatus('error');
     }
-    if (profile) addLog(`👤 User Profile authenticated: ${profile.id}`, "success");
   };
 
   useEffect(() => {
     const initPaddle = () => {
       if (window.Paddle) {
-        addLog("💳 Initializing Paddle Payment Bridge...", "info");
         window.Paddle.Initialize({ 
           token: PADDLE_CLIENT_TOKEN,
           environment: 'production', 
           eventCallback: (event: any) => {
-            addLog(`🎯 Paddle Event: ${event.name}`, event.name === 'error' ? 'error' : 'info');
             if (event.name === 'checkout.completed') {
-               addLog("🎉 Transaction verified! Upgrading account...", "success");
                handleLocalUpgradeSuccess();
             }
             if (event.name === 'checkout.closed') {
                setUpgrading(false);
-               addLog("ℹ️ Checkout overlay closed by user", "info");
             }
           }
         });
         setPaddleStatus('ready');
-        addLog("✅ Paddle Gateway Online", "success");
       } else {
-        addLog("⌛ Waiting for Paddle SDK to mount...", "warning");
         setTimeout(initPaddle, 1500);
       }
     };
@@ -151,7 +139,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
     if (profile) {
       onProfileUpdate(profile.id);
       setShowUpgradeModal(false);
-      addLog("Profile synchronized with Paddle Subscription", "success");
     }
   };
 
@@ -166,37 +153,34 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
   const fetchRequests = async () => {
     if (!profile) return;
     try {
-      addLog("📥 Syncing platform telemetry...", "info");
+      setLoading(true);
       const { data, error } = await supabase.from('feedback_requests').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(20);
       if (error) throw error;
       setRequests(data || []);
-      addLog(`✅ Successfully synced ${data?.length || 0} events`, "success");
     } catch (e: any) { 
-      addLog(`❌ Sync Error: ${e.message}`, "error");
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpdateProfile = async () => {
     if (!profile) return;
     setLoading(true);
-    addLog(`Deploying new configuration for ${businessName}...`, "info");
     const updates = { business_name: businessName, google_review_url: googleUrl };
     const { error } = await supabase.from('profiles').update(updates).eq('id', profile.id);
-    if (error) { addLog(`Deployment failed: ${error.message}`, "error"); } else { onProfileUpdate(profile.id); setEditingProfile(false); addLog("Live deployment successful", "success"); }
+    if (error) { console.error(error); } else { onProfileUpdate(profile.id); setEditingProfile(false); }
     setLoading(false);
   };
 
   const handleUpgradeCheckout = async () => {
     if (!window.Paddle) {
       setPaddleStatus('error');
-      addLog("Critical: Paddle SDK not available", "error");
-      setShowDiagnostics(true);
       return;
     }
 
     setUpgrading(true);
     const priceId = selectedPlan === 'yearly' ? PRICE_ID_ANNUAL : PRICE_ID_MONTHLY;
-    addLog(`Initiating Checkout Sequence: ${priceId}`, "info");
 
     window.Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
@@ -214,22 +198,16 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
     setLoading(true);
     setShowSuccess(false);
     try {
-      addLog(`Generating secure magic link for ${customerName}...`, "info");
       const { data, error } = await supabase.from('feedback_requests').insert({ user_id: profile.id, customer_name: customerName, status: 'pending' }).select().single();
       if (error) throw error;
       setNewLink(`${window.location.origin}${window.location.pathname}#/rate/${data.id}`);
       setCustomerName(''); await fetchRequests(); 
-      
-      // Trigger success animation
       setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        addLog("Production link deployed", "success");
-      }, 3000);
-    } catch (error: any) { addLog(`Link generation error: ${error.message}`, "error"); } finally { setLoading(false); }
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error: any) { console.error(error); } finally { setLoading(false); }
   };
 
-  const copyAndToast = () => { if (!newLink) return; navigator.clipboard.writeText(newLink); setCopied(true); setTimeout(() => setCopied(false), 2000); addLog("Link copied to clipboard", "info"); };
+  const copyAndToast = () => { if (!newLink) return; navigator.clipboard.writeText(newLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   const getSharingUrls = () => {
     const shareText = `Hi! Could you leave us a quick review for ${profile?.business_name}? ${newLink}`;
@@ -240,60 +218,10 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
     };
   };
 
-  // Pre-define confetti colors for the animation
   const confettiColors = ['#10B981', '#F59E0B', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6'];
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-      {/* Diagnostics Console Modal */}
-      <AnimatePresence>
-        {showDiagnostics && (
-          <div className="fixed inset-0 bg-charcoal-950/95 backdrop-blur-xl z-[150] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-charcoal-900 border border-slate-800 rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col h-[80vh]"
-            >
-              <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-charcoal-950">
-                <div className="flex items-center gap-3">
-                  <Terminal className="text-blue-500" size={24} />
-                  <h3 className="text-white font-black uppercase tracking-widest text-sm">System Diagnostics Console</h3>
-                </div>
-                <button onClick={() => setShowDiagnostics(false)} className="text-slate-500 hover:text-white"><X size={24} /></button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6 space-y-2 font-mono text-xs bg-black" ref={logContainerRef}>
-                {logs.length === 0 && <p className="text-slate-600 italic">No telemetry data recorded yet...</p>}
-                {logs.map((log, i) => (
-                  <div key={i} className="flex gap-4 border-b border-white/5 pb-2">
-                    <span className="text-slate-600 shrink-0">[{log.timestamp}]</span>
-                    <span className={
-                      log.type === 'success' ? 'text-emerald-400' : 
-                      log.type === 'error' ? 'text-red-400' : 
-                      log.type === 'warning' ? 'text-amber-400' : 'text-blue-400'
-                    }>
-                      {log.type.toUpperCase()}: {log.message}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-6 bg-charcoal-950 border-t border-slate-800 flex flex-wrap gap-4">
-                <button onClick={runDiagnostics} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-500 transition-all">
-                  <Search size={14} /> Re-Scan Environment
-                </button>
-                <div className="flex-1"></div>
-                <div className="flex items-center gap-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> SDK Loaded</div>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> API Pulse</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {showUpgradeModal && (
           <div className="fixed inset-0 bg-charcoal-950/90 backdrop-blur-md z-[110] flex items-center justify-center p-4">
@@ -306,21 +234,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                 <div className="bg-blue-50 dark:bg-blue-950/30 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6"><Crown size={32} className="text-blue-600 dark:text-blue-400" /></div>
                 <h3 className="text-3xl font-black text-charcoal-900 dark:text-white mb-2 tracking-tighter uppercase">Scale Your Growth</h3>
                 <p className="text-slate-500 dark:text-slate-400 font-bold tracking-tight">Active subscription required to generate professional magic links.</p>
-              </div>
-
-              <div className="mb-8 flex justify-center">
-                <button 
-                  onClick={() => setShowDiagnostics(true)}
-                  className={`px-4 py-2 rounded-full border flex items-center gap-3 transition-all duration-500 hover:scale-105 ${
-                  paddleStatus === 'ready' ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 text-emerald-600' : 
-                  paddleStatus === 'error' ? 'bg-red-50 dark:bg-red-950/30 border-red-100 text-red-600' : 'bg-slate-50 border-slate-100 text-slate-400'
-                }`}>
-                  <div className={`w-2 h-2 rounded-full ${paddleStatus === 'ready' ? 'bg-emerald-500 animate-pulse' : paddleStatus === 'error' ? 'bg-red-500' : 'bg-slate-300'}`}></div>
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    {paddleStatus === 'ready' ? 'Secure Payment Engine: Ready (Check Live)' : 
-                     paddleStatus === 'error' ? 'Payment Engine: Connection Error' : 'Initializing Engine...'}
-                  </span>
-                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
@@ -340,9 +253,9 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                 <button onClick={handleUpgradeCheckout} disabled={upgrading || paddleStatus === 'loading'} className={`w-full py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all active:scale-95 group shadow-xl ${
                     paddleStatus === 'error' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-charcoal-900 dark:bg-blue-600 text-white hover:shadow-2xl'
                   }`}>
-                  {upgrading ? <RefreshCcw size={24} className="animate-spin" /> : <><CreditCard size={24} /> {paddleStatus === 'error' ? 'Connection Error' : 'Subscribe with Paddle'}</>}
+                  {upgrading ? <RefreshCcw size={24} className="animate-spin" /> : <><CreditCard size={24} /> {paddleStatus === 'error' ? 'Payment Error' : 'Subscribe Now'}</>}
                 </button>
-                <div className="flex items-center justify-center gap-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest"><Shield size={14} className="text-blue-500" /> Checkout by Paddle.com</div>
+                <div className="flex items-center justify-center gap-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest"><Shield size={14} className="text-blue-500" /> Secure Checkout by Paddle</div>
               </div>
             </motion.div>
           </div>
@@ -353,10 +266,10 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
         <div className="flex items-center gap-5">
           <div className="bg-white dark:bg-charcoal-900 p-4 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800"><Activity className="text-blue-600" size={32} /></div>
           <div>
-            <h1 className="text-4xl font-black text-charcoal-900 dark:text-white tracking-tighter uppercase">Console</h1>
+            <h1 className="text-4xl font-black text-charcoal-900 dark:text-white tracking-tighter uppercase">Dashboard</h1>
             <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Live Production Active</p>
+              <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Active & Secure</p>
             </div>
           </div>
           
@@ -366,22 +279,13 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
               className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm border transition-all duration-500 hover:scale-105 group relative ${
                 isPro ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30'
             }`}>
-              {isPro ? <><Crown size={14} /> Pro Core Enabled</> : <><AlertCircle size={14} /> Activate Account</>}
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-charcoal-900 text-white px-2 py-1 rounded text-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">View Plans</span>
-            </button>
-
-            <button 
-              onClick={() => setShowDiagnostics(true)}
-              className="bg-slate-100 dark:bg-charcoal-800 p-2 rounded-full text-slate-400 hover:text-blue-600 transition-all flex items-center justify-center relative group"
-            >
-              <PulseIcon size={18} className="animate-pulse" />
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-charcoal-900 text-white px-2 py-1 rounded text-[8px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">System Health</span>
+              {isPro ? <><Crown size={14} /> Professional Plan</> : <><AlertCircle size={14} /> Basic Account</>}
             </button>
           </div>
         </div>
         <div className="flex gap-3">
-          {!isPro && <button onClick={() => setShowUpgradeModal(true)} className="bg-amber-500 text-white font-black px-6 py-3 rounded-2xl transition-all active:scale-95 flex items-center gap-2 shadow-xl hover:bg-amber-600"><Zap size={18} className="fill-current" /> Upgrade Now</button>}
-          <button onClick={() => setEditingProfile(!editingProfile)} className={`font-black px-6 py-3 rounded-2xl transition-all active:scale-95 flex items-center gap-2 ${editingProfile ? 'bg-charcoal-900 dark:bg-blue-600 text-white shadow-xl' : 'bg-slate-100 dark:bg-charcoal-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}><Settings size={18} /> {editingProfile ? 'Hide Config' : 'Configuration'}</button>
+          {!isPro && <button onClick={() => setShowUpgradeModal(true)} className="bg-amber-500 text-white font-black px-6 py-3 rounded-2xl transition-all active:scale-95 flex items-center gap-2 shadow-xl hover:bg-amber-600"><Zap size={18} className="fill-current" /> Upgrade</button>}
+          <button onClick={() => setEditingProfile(!editingProfile)} className={`font-black px-6 py-3 rounded-2xl transition-all active:scale-95 flex items-center gap-2 ${editingProfile ? 'bg-charcoal-900 dark:bg-blue-600 text-white shadow-xl' : 'bg-slate-100 dark:bg-charcoal-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}><Settings size={18} /> {editingProfile ? 'Close Settings' : 'Settings'}</button>
         </div>
       </div>
 
@@ -390,11 +294,7 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="bg-white dark:bg-charcoal-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-2xl space-y-10 mb-8 transition-colors">
               <div className="flex justify-between items-center border-b border-slate-50 dark:border-charcoal-800 pb-6">
-                <h2 className="text-2xl font-black text-charcoal-900 dark:text-white tracking-tight flex items-center gap-3 uppercase"><DatabaseIcon className="text-blue-600" size={24} /> Deployment Details</h2>
-                <button onClick={() => setShowDiagnostics(true)} className="flex items-center gap-2 bg-slate-50 dark:bg-charcoal-950 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-500 transition-all">
-                  <Terminal size={14} className="text-blue-500" />
-                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Open Terminal Log</span>
-                </button>
+                <h2 className="text-2xl font-black text-charcoal-900 dark:text-white tracking-tight flex items-center gap-3 uppercase"><DatabaseIcon className="text-blue-600" size={24} /> Business Settings</h2>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-8">
@@ -409,7 +309,7 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                 </div>
                 <div className="space-y-6">
                   <div className="p-8 bg-slate-50 dark:bg-charcoal-950/40 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3 mb-6"><ShieldCheck className="text-emerald-500" size={24} /><h4 className="text-lg font-black text-charcoal-900 dark:text-white uppercase tracking-tight">Legal Assets</h4></div>
+                    <div className="flex items-center gap-3 mb-6"><ShieldCheck className="text-emerald-500" size={24} /><h4 className="text-lg font-black text-charcoal-900 dark:text-white uppercase tracking-tight">Policies</h4></div>
                     <div className="space-y-3">
                        {legalLinks.map((link) => (
                          <div key={link.path} className="flex items-center justify-between p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all">
@@ -422,7 +322,7 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                 </div>
               </div>
               <div className="pt-6 flex justify-end">
-                <button onClick={handleUpdateProfile} disabled={loading} className="bg-charcoal-900 dark:bg-blue-600 text-white px-12 py-5 rounded-[1.5rem] font-black hover:bg-charcoal-950 transition-all active:scale-95 shadow-2xl flex items-center gap-3 text-lg uppercase tracking-tight">{loading ? 'Processing...' : <><Check size={24} /> Deploy Configuration</>}</button>
+                <button onClick={handleUpdateProfile} disabled={loading} className="bg-charcoal-900 dark:bg-blue-600 text-white px-12 py-5 rounded-[1.5rem] font-black hover:bg-charcoal-950 transition-all active:scale-95 shadow-2xl flex items-center gap-3 text-lg uppercase tracking-tight">{loading ? 'Saving...' : <><Check size={24} /> Save Settings</>}</button>
               </div>
             </div>
           </motion.div>
@@ -433,13 +333,13 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
         {!isPro && <div className="absolute inset-0 z-20 flex items-center justify-center backdrop-blur-[4px] pointer-events-auto"><button onClick={() => setShowUpgradeModal(true)} className="bg-white text-charcoal-900 px-10 py-5 rounded-[1.5rem] font-black text-xl shadow-2xl hover:scale-110 active:scale-95 transition-all uppercase">Subscribe to Unlock</button></div>}
         
         <div className="max-w-2xl mx-auto space-y-12 relative z-10 text-center">
-          <div><h2 className="text-5xl font-black mb-4 tracking-tighter uppercase">Sequence Generator</h2><p className="text-slate-400 font-bold text-lg">Deploy a professional feedback funnel for your customer</p></div>
+          <div><h2 className="text-5xl font-black mb-4 tracking-tighter uppercase">Generate Link</h2><p className="text-slate-400 font-bold text-lg">Send a review request to your customer</p></div>
           <div className="space-y-6">
             <div className="relative">
-              <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Full Name..." className="w-full px-10 py-6 rounded-[2rem] text-slate-900 focus:ring-[12px] focus:ring-blue-500/10 outline-none text-3xl font-black transition-all shadow-inner text-center placeholder:text-slate-200" />
+              <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer Name..." className="w-full px-10 py-6 rounded-[2rem] text-slate-900 focus:ring-[12px] focus:ring-blue-500/10 outline-none text-3xl font-black transition-all shadow-inner text-center placeholder:text-slate-200" />
               {customerName && <div className="absolute right-10 top-1/2 -translate-y-1/2 text-blue-500 animate-pulse"><Sparkles size={32} /></div>}
             </div>
-            <button onClick={generateLink} disabled={loading || !customerName} className={`w-full py-6 rounded-[2rem] font-black text-3xl transition-all duration-500 transform flex items-center justify-center gap-4 active:scale-95 ${customerName ? 'bg-white text-charcoal-900 hover:bg-blue-50 hover:-translate-y-2' : 'bg-white/10 text-white/10 cursor-not-allowed'}`}>{loading ? <div className="animate-spin h-10 w-10 border-4 border-charcoal-900 border-t-transparent rounded-full" /> : <Share2 size={36} />}{loading ? 'Processing...' : 'Deploy Magic Link'}</button>
+            <button onClick={generateLink} disabled={loading || !customerName} className={`w-full py-6 rounded-[2rem] font-black text-3xl transition-all duration-500 transform flex items-center justify-center gap-4 active:scale-95 ${customerName ? 'bg-white text-charcoal-900 hover:bg-blue-50 hover:-translate-y-2' : 'bg-white/10 text-white/10 cursor-not-allowed'}`}>{loading ? <div className="animate-spin h-10 w-10 border-4 border-charcoal-900 border-t-transparent rounded-full" /> : <Share2 size={36} />}{loading ? 'Creating...' : 'Get Magic Link'}</button>
           </div>
           
           <AnimatePresence>
@@ -451,7 +351,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                 className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
               >
                 <div className="relative flex flex-col items-center">
-                  {/* Confetti Burst */}
                   {[...Array(24)].map((_, i) => (
                     <motion.div
                       key={i}
@@ -469,7 +368,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                     />
                   ))}
                   
-                  {/* Glowing Checkmark */}
                   <motion.div
                     initial={{ scale: 0, rotate: -45 }}
                     animate={{ scale: [0, 1.2, 1], rotate: 0 }}
@@ -477,16 +375,6 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                     className="bg-emerald-500 text-white p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(16,185,129,0.6)] relative z-10"
                   >
                     <Check size={80} strokeWidth={4} />
-                  </motion.div>
-                  
-                  {/* Success Message */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-8 text-center"
-                  >
-                    <h4 className="text-4xl font-black text-white uppercase tracking-tighter drop-shadow-2xl">Magic Link Deployed</h4>
-                    <p className="text-emerald-400 font-black uppercase tracking-[0.4em] text-xs mt-2">Ready for sharing</p>
                   </motion.div>
                 </div>
               </motion.div>
@@ -510,15 +398,15 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
 
       <div className="bg-white dark:bg-charcoal-900 rounded-[3.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-2xl">
         <div className="px-12 py-10 border-b border-slate-50 dark:border-charcoal-800 flex justify-between items-center bg-slate-50/40 dark:bg-charcoal-950/30">
-          <div><h3 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tight uppercase">Platform Feed</h3><p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Real-time engagement telemetry</p></div>
+          <div><h3 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tight uppercase">Recent Activity</h3><p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Track your feedback requests</p></div>
           <button onClick={fetchRequests} className="p-4 text-slate-400 hover:text-blue-600 transition-all group"><RefreshCcw size={24} className={`${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} /></button>
         </div>
         <div className="overflow-x-auto p-8">
           {requests.length === 0 ? (
-            <div className="py-24 text-center space-y-6"><div className="bg-slate-50 dark:bg-charcoal-800 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-inner"><Star size={40} className="text-slate-200" /></div><p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em]">Telemetry stream awaiting data</p></div>
+            <div className="py-24 text-center space-y-6"><div className="bg-slate-50 dark:bg-charcoal-800 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-inner"><Star size={40} className="text-slate-200" /></div><p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em]">No activity yet</p></div>
           ) : (
             <table className="w-full text-left border-separate border-spacing-y-4">
-              <thead><tr className="text-slate-400 text-[10px] uppercase font-black tracking-widest"><th className="px-8 py-5">Participant</th><th className="px-8 py-5">Engagement State</th><th className="px-8 py-5">Sentiment Analysis</th><th className="px-8 py-5 text-right">Timestamp</th></tr></thead>
+              <thead><tr className="text-slate-400 text-[10px] uppercase font-black tracking-widest"><th className="px-8 py-5">Customer</th><th className="px-8 py-5">Status</th><th className="px-8 py-5">Rating</th><th className="px-8 py-5 text-right">Date</th></tr></thead>
               <tbody>
                 {requests.map((req) => (
                   <tr key={req.id} className="bg-slate-50/50 dark:bg-charcoal-950/30 hover:bg-slate-50 transition-all group">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase, isSupabaseConfigured } from '../supabase.ts';
-import { Mail, Lock, ShieldCheck, Star, Zap, Smartphone, ArrowLeft, Loader2, UserPlus, LogIn, CheckCircle2, Inbox } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, Star, Zap, Smartphone, ArrowLeft, Loader2, UserPlus, LogIn, CheckCircle2, Inbox, ExternalLink } from 'lucide-react';
 
 interface Props {
   onAuthSuccess: (user: any) => void;
@@ -25,7 +25,7 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | React.ReactNode | null>(null);
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured) {
@@ -35,19 +35,37 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // Point back to the current origin for a seamless return
+          // Point back to the current site origin for a seamless return
           redirectTo: window.location.origin + window.location.pathname
         }
       });
-      if (error) throw error;
+      if (oauthError) throw oauthError;
     } catch (err: any) {
-      console.error("OAuth Error:", err);
-      // Specifically handle the case where Google provider is disabled in Supabase dashboard
+      console.error("OAuth Initialization Error:", err);
+      
+      // Specifically handle the common 'provider not enabled' case
       if (err.message?.includes('provider is not enabled')) {
-        setError('Google sign-in is not enabled. Go to Supabase Dashboard > Authentication > Providers to enable it.');
+        setError(
+          <div className="flex flex-col gap-3">
+            <p className="font-bold">Google Login is not enabled in your Supabase project.</p>
+            <p className="text-[11px] leading-relaxed opacity-80">
+              1. Go to your <strong>Supabase Dashboard</strong><br />
+              2. Navigate to <strong>Authentication > Providers</strong><br />
+              3. Find <strong>Google</strong> and toggle it <strong>ON</strong>.
+            </p>
+            <a 
+              href="https://supabase.com/dashboard/project/_/auth/providers" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="mt-1 flex items-center justify-center gap-2 bg-charcoal-900 text-white py-2 rounded-xl text-[10px] uppercase font-black tracking-widest hover:bg-black transition-colors"
+            >
+              Open Supabase Dashboard <ExternalLink size={12} />
+            </a>
+          </div>
+        );
       } else {
         setError(err.message || 'An error occurred during Google sign-in.');
       }
@@ -163,7 +181,7 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
             <button 
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-4 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-charcoal-800 transition-all active:scale-95 group shadow-sm"
+              className="w-full flex items-center justify-center gap-3 py-4 bg-white dark:bg-charcoal-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-charcoal-800 transition-all active:scale-[0.98] group shadow-sm hover:shadow-md"
             >
               <GoogleLogo />
               Continue with Google
@@ -179,7 +197,7 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 p-4 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm font-bold animate-in slide-in-from-top-2">
                 <ShieldCheck size={18} className="mt-0.5 flex-shrink-0" />
-                <span className="leading-tight">{error}</span>
+                <div className="leading-tight">{error}</div>
               </div>
             )}
 
