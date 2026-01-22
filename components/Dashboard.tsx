@@ -218,8 +218,14 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
       const { data, error } = await supabase.from('feedback_requests').insert({ user_id: profile.id, customer_name: customerName, status: 'pending' }).select().single();
       if (error) throw error;
       setNewLink(`${window.location.origin}${window.location.pathname}#/rate/${data.id}`);
-      setCustomerName(''); await fetchRequests(); setShowSuccess(true); setTimeout(() => setShowSuccess(false), 2500);
-      addLog("Production link deployed", "success");
+      setCustomerName(''); await fetchRequests(); 
+      
+      // Trigger success animation
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        addLog("Production link deployed", "success");
+      }, 3000);
     } catch (error: any) { addLog(`Link generation error: ${error.message}`, "error"); } finally { setLoading(false); }
   };
 
@@ -233,6 +239,9 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`
     };
   };
+
+  // Pre-define confetti colors for the animation
+  const confettiColors = ['#10B981', '#F59E0B', '#3B82F6', '#6366F1', '#EC4899', '#8B5CF6'];
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
@@ -403,7 +412,7 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
                     <div className="flex items-center gap-3 mb-6"><ShieldCheck className="text-emerald-500" size={24} /><h4 className="text-lg font-black text-charcoal-900 dark:text-white uppercase tracking-tight">Legal Assets</h4></div>
                     <div className="space-y-3">
                        {legalLinks.map((link) => (
-                         <div key={link.path} className="flex items-center justify-between p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-charcoal-800 hover:border-blue-500/30 transition-all">
+                         <div key={link.path} className="flex items-center justify-between p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-500/30 transition-all">
                             <div className="flex items-center gap-3"><span className="text-slate-400">{link.icon}</span><span className="text-xs font-black text-charcoal-800 dark:text-slate-300 uppercase tracking-widest">{link.name}</span></div>
                             <button onClick={() => handleCopyLegal(link.path, link.name)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${copyStatus === link.name ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-charcoal-800 text-slate-400 hover:bg-blue-600 hover:text-white'}`}>{copyStatus === link.name ? <Check size={12} /> : <Copy size={12} />}{copyStatus === link.name ? 'Copied' : 'Copy'}</button>
                          </div>
@@ -432,14 +441,58 @@ const Dashboard: React.FC<Props> = ({ profile, onProfileUpdate }) => {
             </div>
             <button onClick={generateLink} disabled={loading || !customerName} className={`w-full py-6 rounded-[2rem] font-black text-3xl transition-all duration-500 transform flex items-center justify-center gap-4 active:scale-95 ${customerName ? 'bg-white text-charcoal-900 hover:bg-blue-50 hover:-translate-y-2' : 'bg-white/10 text-white/10 cursor-not-allowed'}`}>{loading ? <div className="animate-spin h-10 w-10 border-4 border-charcoal-900 border-t-transparent rounded-full" /> : <Share2 size={36} />}{loading ? 'Processing...' : 'Deploy Magic Link'}</button>
           </div>
+          
           <AnimatePresence>
             {showSuccess && (
-              <motion.div initial={{ opacity: 0, y: -20, scale: 0.5 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} className="flex flex-col items-center justify-center py-6 gap-2">
-                <div className="relative"><motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 12, stiffness: 200 }} className="bg-emerald-500 text-white p-4 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.4)]"><Check size={40} strokeWidth={4} /></motion.div>{[...Array(6)].map((_, i) => (<motion.div key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: [0, 1, 0], scale: [0, 1.2, 0.5], x: Math.cos(i * 60 * Math.PI / 180) * 60, y: Math.sin(i * 60 * Math.PI / 180) * 60 }} transition={{ duration: 0.8, delay: 0.1 }} className="absolute top-1/2 left-1/2 text-amber-400"><Sparkles size={20} fill="currentColor" /></motion.div>))}</div>
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400 font-black uppercase tracking-[0.3em] text-[10px] mt-4">Sequence Deployed</motion.p>
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+              >
+                <div className="relative flex flex-col items-center">
+                  {/* Confetti Burst */}
+                  {[...Array(24)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                      animate={{ 
+                        opacity: [0, 1, 1, 0], 
+                        scale: [0, 1, 0.5, 0], 
+                        x: (Math.random() - 0.5) * 400, 
+                        y: (Math.random() - 0.5) * 400,
+                        rotate: Math.random() * 360
+                      }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                      className="absolute w-3 h-3 rounded-sm"
+                      style={{ backgroundColor: confettiColors[i % confettiColors.length] }}
+                    />
+                  ))}
+                  
+                  {/* Glowing Checkmark */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: [0, 1.2, 1], rotate: 0 }}
+                    transition={{ type: "spring", damping: 10, stiffness: 200 }}
+                    className="bg-emerald-500 text-white p-8 rounded-[2.5rem] shadow-[0_0_80px_rgba(16,185,129,0.6)] relative z-10"
+                  >
+                    <Check size={80} strokeWidth={4} />
+                  </motion.div>
+                  
+                  {/* Success Message */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-8 text-center"
+                  >
+                    <h4 className="text-4xl font-black text-white uppercase tracking-tighter drop-shadow-2xl">Magic Link Deployed</h4>
+                    <p className="text-emerald-400 font-black uppercase tracking-[0.4em] text-xs mt-2">Ready for sharing</p>
+                  </motion.div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
+
           {newLink && !showSuccess && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-charcoal-950/60 p-10 rounded-[3rem] border border-charcoal-800 shadow-2xl space-y-10">
               <div className="flex items-center gap-3">

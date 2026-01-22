@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendofyx - Feedback Filter</title>
+    <title>Vendofyx - Smart Feedback Filter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,113 +13,94 @@
     <style>
         :root {
             --font-main: 'Plus Jakarta Sans', sans-serif;
+            --brand-blue: #2563eb;
+            --brand-charcoal: #0f172a;
         }
         body { 
             font-family: var(--font-main);
             overflow-x: hidden; 
             letter-spacing: -0.01em;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            background: #f8fafc;
+        }
+
+        /* High-End Preloader */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .dark #preloader { background: #020617; }
+
+        .pulse-loader {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: var(--brand-blue);
+            animation: pulse 1.5s ease-in-out infinite;
+            position: relative;
+        }
+        .pulse-loader::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px solid var(--brand-blue);
+            border-radius: 24px;
+            animation: ripple 1.5s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.8); opacity: 0; }
         }
 
         h1, h2, h3, h4, .font-black {
             letter-spacing: -0.04em !important;
         }
-        
-        @keyframes progress-fill {
-          0% { width: 0%; opacity: 0.8; }
-          50% { opacity: 1; }
-          100% { width: 100%; opacity: 0.9; }
+
+        /* Route Transition Wrapper */
+        .route-transition-wrapper {
+            position: relative;
+            width: 100%;
         }
 
-        .animate-progress-bar {
-          animation: progress-fill 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
+        /* Animation Keyframes from existing app */
         @keyframes magic-morph {
           0% { transform: rotate(0deg) scale(1); fill: #3b82f6; }
           60% { transform: rotate(180deg) scale(1.2); fill: #f59e0b; }
           100% { transform: rotate(360deg) scale(1); fill: #3b82f6; }
         }
-
-        @keyframes magic-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-
         .logo-container:hover .main-star {
-          animation: magic-morph 2s linear infinite, magic-bounce 1.2s ease-in-out infinite;
-        }
-
-        @keyframes rect-path {
-          0% { transform: translate(-85px, -24px); }
-          25% { transform: translate(85px, -24px); }
-          50% { transform: translate(85px, 24px); }
-          75% { transform: translate(-85px, 24px); }
-          100% { transform: translate(-85px, -24px); }
-        }
-
-        .surround-star {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          margin-top: -6px;
-          margin-left: -6px;
-          opacity: 0;
-          transform: scale(0);
-          transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .logo-container:hover .surround-star {
-          opacity: 1;
-          transform: scale(1);
-        }
-
-        .star-1 { animation: rect-path 5s linear infinite; }
-        .star-2 { animation: rect-path 5s linear infinite; animation-delay: -0.8s; }
-        .star-3 { animation: rect-path 5s linear infinite; animation-delay: -1.6s; }
-        .star-4 { animation: rect-path 5s linear infinite; animation-delay: -2.4s; }
-        .star-5 { animation: rect-path 5s linear infinite; animation-delay: -3.2s; }
-        .star-6 { animation: rect-path 5s linear infinite; animation-delay: -4s; }
-
-        @keyframes star-burst-out {
-          0% { transform: translate(0, 0) scale(0); opacity: 0; }
-          10% { opacity: 1; }
-          100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); opacity: 0; }
-        }
-        .animate-star-burst {
-          animation: star-burst-out 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-
-        .route-transition-wrapper {
-            position: relative;
-            width: 100%;
+          animation: magic-morph 2s linear infinite;
         }
     </style>
     <script>
+      // Sync Dark Mode early to prevent flash
+      if (localStorage.getItem('vendofyx_theme') === 'dark' || 
+          (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             colors: {
               charcoal: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
-                950: '#020617',
+                50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 
+                400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 
+                800: '#1e293b', 900: '#0f172a', 950: '#020617',
               }
-            },
-            animation: {
-              'spin-slow': 'spin 12s linear infinite',
             }
           }
         }
@@ -128,22 +109,43 @@
 <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "framer-motion": "https://esm.sh/framer-motion@^11.0.0"
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react": "https://esm.sh/react@19.0.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
+    "lucide-react": "https://esm.sh/lucide-react@0.446.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.26.2",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.1"
   }
 }
 </script>
-<!-- Browser-side transpiler for zero-build environments -->
-<script type="module" src="https://esm.sh/run"></script>
 </head>
 <body class="bg-slate-50 dark:bg-charcoal-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div id="preloader">
+        <div class="pulse-loader"></div>
+        <p style="margin-top: 24px; font-weight: 900; letter-spacing: 0.2em; color: #2563eb; font-size: 10px; text-transform: uppercase;">Initializing Core Labs</p>
+    </div>
+
     <div id="root"></div>
-    <!-- Entry point for the esm.sh loader to discover and transpile -->
+
+    <!-- Browser-side transpiler for zero-build environments -->
+    <script type="module">
+        import { run } from "https://esm.sh/run";
+        run();
+        
+        // Hide preloader once react mounts
+        window.addEventListener('load', () => {
+          const checkReady = setInterval(() => {
+            if (document.querySelector('#root').children.length > 0) {
+              const preloader = document.getElementById('preloader');
+              preloader.style.opacity = '0';
+              setTimeout(() => preloader.remove(), 500);
+              clearInterval(checkReady);
+            }
+          }, 100);
+        });
+    </script>
+    <!-- Use text/babel to ensure esm.sh/run transpiles the JSX -->
     <script type="text/babel" src="./index.tsx"></script>
 </body>
 </html>
