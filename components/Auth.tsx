@@ -12,7 +12,7 @@ const GoogleLogo = () => (
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
   </svg>
 );
 
@@ -37,38 +37,11 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
     try {
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          // Point back to the current site origin for a seamless return
-          redirectTo: window.location.origin + window.location.pathname
-        }
+        options: { redirectTo: window.location.origin + window.location.pathname }
       });
       if (oauthError) throw oauthError;
     } catch (err: any) {
-      console.error("OAuth Initialization Error:", err);
-      
-      // Specifically handle the common 'provider not enabled' case
-      if (err.message?.includes('provider is not enabled')) {
-        setError(
-          <div className="flex flex-col gap-3">
-            <p className="font-bold">Google Login is not enabled in your Supabase project.</p>
-            <p className="text-[11px] leading-relaxed opacity-80">
-              1. Go to your <strong>Supabase Dashboard</strong><br />
-              2. Navigate to <strong>Authentication > Providers</strong><br />
-              3. Find <strong>Google</strong> and toggle it <strong>ON</strong>.
-            </p>
-            <a 
-              href="https://supabase.com/dashboard/project/_/auth/providers" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="mt-1 flex items-center justify-center gap-2 bg-charcoal-900 text-white py-2 rounded-xl text-[10px] uppercase font-black tracking-widest hover:bg-black transition-colors"
-            >
-              Open Supabase Dashboard <ExternalLink size={12} />
-            </a>
-          </div>
-        );
-      } else {
-        setError(err.message || 'An error occurred during Google sign-in.');
-      }
+      setError(err.message || 'An error occurred during Google sign-in.');
       setLoading(false);
     }
   };
@@ -113,23 +86,17 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
   if (isEmailSent) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-charcoal-900 p-10 rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-8 animate-in zoom-in duration-300">
-          <div className="bg-blue-50 dark:bg-blue-950/30 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <Inbox size={48} className="text-blue-600 dark:text-blue-400 animate-bounce" />
+        <div className="max-w-md w-full bg-white dark:bg-charcoal-900 p-12 rounded-[3.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 text-center space-y-8">
+          <div className="bg-blue-50 dark:bg-blue-950/30 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+            <Inbox size={48} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tighter uppercase">Check Your Inbox</h2>
-            <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-              We've sent a verification link to <br/><span className="text-charcoal-900 dark:text-white font-bold break-all">{email}</span>.
-            </p>
+            <h2 className="text-3xl font-black text-charcoal-900 dark:text-white uppercase tracking-tight">Verify Inbox</h2>
+            <p className="text-slate-500 font-medium">We sent a link to <br/><span className="text-charcoal-900 dark:text-white font-bold break-all">{email}</span></p>
           </div>
-          <div className="p-6 bg-slate-50 dark:bg-charcoal-950/50 rounded-2xl text-xs font-bold text-slate-400 text-left space-y-2">
-            <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Click the link to activate your account.</div>
-            <div className="flex items-center gap-2"><CheckCircle2 size={14} className="text-emerald-500" /> Once confirmed, return here to log in.</div>
-          </div>
-          <div className="pt-4 flex flex-col gap-3">
-             <button onClick={() => window.location.reload()} className="w-full bg-charcoal-900 dark:bg-blue-600 text-white py-4 rounded-2xl font-black text-lg hover:shadow-xl transition-all active:scale-95 shadow-lg">Verified? Log In Now</button>
-             <button onClick={() => setIsEmailSent(false)} className="text-slate-400 hover:text-blue-600 font-black text-[10px] uppercase tracking-widest transition-colors">Wait, I used the wrong email</button>
+          <div className="pt-4 flex flex-col gap-4">
+             <button onClick={() => window.location.reload()} className="interactive-element w-full bg-charcoal-900 dark:bg-blue-600 text-white py-5 rounded-2xl font-black text-xl border-transparent shadow-xl">I've Verified My Email</button>
+             <button onClick={() => setIsEmailSent(false)} className="interactive-element text-slate-400 hover:text-blue-600 font-black text-[10px] uppercase tracking-widest transition-colors border-transparent py-2">Back to Edit Email</button>
           </div>
         </div>
       </div>
@@ -138,109 +105,80 @@ const Auth: React.FC<Props> = ({ onAuthSuccess }) => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         
-        <div className="hidden md:block space-y-8">
-          <div className="space-y-4">
-            <h2 className="text-5xl font-black text-charcoal-900 dark:text-white tracking-tighter leading-tight">
-              Reputation <br />
+        <div className="hidden md:block space-y-12">
+          <div className="space-y-6">
+            <h2 className="text-6xl font-black text-charcoal-900 dark:text-white tracking-tighter leading-[0.85]">
+              Scale Trust <br />
               <span className="text-blue-600">On Autopilot.</span>
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-lg leading-relaxed">
-              Join 500+ businesses filtering their feedback and building trust with every single customer.
+            <p className="text-xl text-slate-500 font-medium leading-relaxed">
+              Join 500+ businesses filtering their feedback and building public trust with every customer visit.
             </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
-              <Star className="text-amber-400 fill-amber-400 mb-2" size={20} />
-              <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Filter 1-3 Stars</p>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 bg-white dark:bg-charcoal-900 rounded-3xl border-2 border-slate-100 dark:border-slate-800 shadow-sm">
+              <Star className="text-amber-400 fill-amber-400 mb-4" size={24} />
+              <p className="text-xs font-black uppercase text-slate-400 tracking-widest leading-tight">Filter 1-3 Star Complaints</p>
             </div>
-            <div className="p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
-              <Zap className="text-blue-500 fill-blue-500 mb-2" size={20} />
-              <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Boost 5 Stars</p>
+            <div className="p-6 bg-white dark:bg-charcoal-900 rounded-3xl border-2 border-slate-100 dark:border-slate-800 shadow-sm">
+              <Zap className="text-blue-500 fill-blue-500 mb-4" size={24} />
+              <p className="text-xs font-black uppercase text-slate-400 tracking-widest leading-tight">Boost 5 Star Public Reviews</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-charcoal-900 p-8 md:p-10 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 relative">
-          <button onClick={() => navigate('/')} className="absolute -top-12 left-0 text-slate-400 hover:text-blue-600 flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-colors group">
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back Home
+        <div className="bg-white dark:bg-charcoal-900 p-10 rounded-[3.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 relative">
+          <button onClick={() => navigate('/')} className="interactive-element absolute -top-12 left-0 text-slate-400 hover:text-blue-600 flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-colors border-transparent py-2 px-4 rounded-xl">
+            <ArrowLeft size={16} /> Back Home
           </button>
 
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tight mb-2">
-              {isLogin ? 'Welcome Back' : 'Get Started'}
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl font-black text-charcoal-900 dark:text-white tracking-tight uppercase">
+              {isLogin ? 'Portal Login' : 'Create Account'}
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium">
-              {isLogin ? "Enter your credentials to manage your inbox" : "Create your account and start filtering today"}
+            <p className="text-slate-500 font-bold mt-2">
+              {isLogin ? "Manage your reputation" : "Start filtering today"}
             </p>
           </div>
 
           <div className="space-y-4 mb-8">
-            <button 
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-4 bg-white dark:bg-charcoal-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-charcoal-800 transition-all active:scale-[0.98] group shadow-sm hover:shadow-md"
-            >
-              <GoogleLogo />
-              Continue with Google
+            <button onClick={handleGoogleLogin} disabled={loading} className="interactive-element w-full flex items-center justify-center gap-3 py-4 bg-white dark:bg-charcoal-950 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-charcoal-700 dark:text-white shadow-sm">
+              <GoogleLogo /> Continue with Google
             </button>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 py-2">
               <div className="h-[1px] flex-1 bg-slate-100 dark:bg-slate-800"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">OR</span>
               <div className="h-[1px] flex-1 bg-slate-100 dark:bg-slate-800"></div>
             </div>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-5">
+          <form onSubmit={handleAuth} className="space-y-6">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 p-4 rounded-xl flex items-start gap-3 text-red-600 dark:text-red-400 text-sm font-bold animate-in slide-in-from-top-2">
-                <ShieldCheck size={18} className="mt-0.5 flex-shrink-0" />
-                <div className="leading-tight">{error}</div>
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-100 dark:border-red-900/30 p-4 rounded-2xl flex items-start gap-3 text-red-600 text-xs font-bold">
+                <ShieldCheck size={18} className="flex-shrink-0" />
+                <div className="leading-tight uppercase tracking-widest">{error}</div>
               </div>
             )}
-
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Work Email</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                <input 
-                  type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-charcoal-950 border-2 border-slate-50 dark:border-charcoal-800 rounded-2xl focus:border-blue-500 outline-none font-bold transition-all text-slate-900 dark:text-white"
-                  placeholder="name@company.com"
-                />
-              </div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Email Address</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="interactive-element w-full px-6 py-4 bg-slate-50 dark:bg-charcoal-950 border-slate-100 dark:border-charcoal-800 rounded-2xl outline-none font-bold text-charcoal-900 dark:text-white" placeholder="name@business.com" />
             </div>
-
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                <input 
-                  type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-charcoal-950 border-2 border-slate-50 dark:border-charcoal-800 rounded-2xl focus:border-blue-500 outline-none font-bold transition-all text-slate-900 dark:text-white"
-                  placeholder="••••••••"
-                />
-              </div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Secure Password</label>
+              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="interactive-element w-full px-6 py-4 bg-slate-50 dark:bg-charcoal-950 border-slate-100 dark:border-charcoal-800 rounded-2xl outline-none font-bold text-charcoal-900 dark:text-white" placeholder="••••••••" />
             </div>
-
-            <button 
-              disabled={loading}
-              className="w-full bg-charcoal-900 dark:bg-blue-600 text-white py-5 rounded-2xl font-black text-xl hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-lg"
-            >
-              {loading ? <Loader2 className="animate-spin" /> : (isLogin ? <><LogIn size={20}/> Login</> : <><UserPlus size={20}/> Create Account</>)}
+            <button disabled={loading} className="interactive-element w-full bg-charcoal-900 dark:bg-blue-600 text-white py-5 rounded-2xl font-black text-xl border-transparent shadow-xl flex items-center justify-center gap-3">
+              {loading ? <Loader2 className="animate-spin" /> : (isLogin ? <><LogIn size={20}/> Login</> : <><UserPlus size={20}/> Get Started</>)}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-50 dark:border-charcoal-800 text-center space-y-6">
+          <div className="mt-10 pt-8 border-t border-slate-50 dark:border-charcoal-800 text-center">
             <p className="text-sm font-bold text-slate-400">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button 
-                onClick={() => setIsLogin(!isLogin)} 
-                className="ml-2 text-blue-600 dark:text-blue-400 hover:underline font-black"
-              >
-                {isLogin ? 'Sign up for free' : 'Login now'}
+              {isLogin ? "New to Vendofyx?" : "Already a partner?"}
+              <button onClick={() => setIsLogin(!isLogin)} className="interactive-element ml-2 text-blue-600 font-black border-transparent px-2 py-1 rounded-lg">
+                {isLogin ? 'Join Free' : 'Sign In'}
               </button>
             </p>
           </div>
