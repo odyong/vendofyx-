@@ -67,22 +67,6 @@
         h1, h2, h3, h4, .font-black {
             letter-spacing: -0.04em !important;
         }
-
-        /* Route Transition Wrapper */
-        .route-transition-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        /* Animation Keyframes from existing app */
-        @keyframes magic-morph {
-          0% { transform: rotate(0deg) scale(1); fill: #3b82f6; }
-          60% { transform: rotate(180deg) scale(1.2); fill: #f59e0b; }
-          100% { transform: rotate(360deg) scale(1); fill: #3b82f6; }
-        }
-        .logo-container:hover .main-star {
-          animation: magic-morph 2s linear infinite;
-        }
     </style>
     <script>
       // Sync Dark Mode early to prevent flash
@@ -109,16 +93,20 @@
 <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
-    "react/": "https://esm.sh/react@19.0.0/",
     "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
-    "lucide-react": "https://esm.sh/lucide-react@0.446.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@6.26.2",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.1"
+    "lucide-react": "https://esm.sh/lucide-react@0.446.0?deps=react@19.0.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.26.2?deps=react@19.0.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.1?deps=react@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
+<!-- Self-executing loader that processes text/babel scripts -->
+<script type="module" src="https://esm.sh/run"></script>
 </head>
 <body class="bg-slate-50 dark:bg-charcoal-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
     <div id="preloader">
@@ -128,24 +116,25 @@
 
     <div id="root"></div>
 
-    <!-- Browser-side transpiler for zero-build environments -->
     <script type="module">
-        import { run } from "https://esm.sh/run";
-        run();
-        
-        // Hide preloader once react mounts
-        window.addEventListener('load', () => {
-          const checkReady = setInterval(() => {
-            if (document.querySelector('#root').children.length > 0) {
-              const preloader = document.getElementById('preloader');
+        // Hide preloader once react mounts successfully
+        const checkReady = setInterval(() => {
+          const root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            const preloader = document.getElementById('preloader');
+            if (preloader) {
               preloader.style.opacity = '0';
               setTimeout(() => preloader.remove(), 500);
-              clearInterval(checkReady);
             }
-          }, 100);
-        });
+            clearInterval(checkReady);
+          }
+        }, 100);
+
+        // Safety timeout: if it takes more than 10s, something is wrong but let's show the UI anyway
+        setTimeout(() => clearInterval(checkReady), 10000);
     </script>
-    <!-- Use text/babel to ensure esm.sh/run transpiles the JSX -->
+    
+    <!-- Use text/babel so esm.sh/run can find and transpile this -->
     <script type="text/babel" src="./index.tsx"></script>
 </body>
 </html>
