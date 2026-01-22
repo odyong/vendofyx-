@@ -49,17 +49,17 @@ const AppContent: React.FC<{
     <nav className="bg-white dark:bg-charcoal-900 border-b border-slate-200 dark:border-slate-800 px-4 py-4 sticky top-0 z-50 shadow-sm transition-colors duration-300">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link to="/" className="logo-container relative flex items-center gap-4 font-black text-charcoal-900 dark:text-white text-2xl group transition-all duration-300 py-3 px-2">
-          <div className="relative z-10">
-            <Star className={`main-star transition-all duration-500 ${isDark ? 'fill-blue-500' : 'fill-charcoal-900'} text-transparent`} size={32} />
+          <div className="relative z-10 transition-transform duration-1000 group-hover:rotate-[360deg]">
+            <Star className={`main-star transition-all duration-500 ${isDark ? 'fill-blue-500' : 'fill-charcoal-900'} group-hover:animate-rainbow`} size={32} />
           </div>
           <div className="relative">
-            <span className="logo-text transition-all duration-300 text-3xl tracking-tighter relative z-10">Vendofyx</span>
-            <Star className="surround-star star-1 text-blue-500 fill-blue-500" size={10} />
-            <Star className="surround-star star-2 text-amber-500 fill-amber-500" size={12} />
-            <Star className="surround-star star-3 text-indigo-400 fill-indigo-400" size={8} />
-            <Star className="surround-star star-4 text-purple-500 fill-purple-500" size={11} />
-            <Star className="surround-star star-5 text-emerald-500 fill-emerald-500" size={9} />
-            <Star className="surround-star star-6 text-rose-500 fill-rose-500" size={10} />
+            <span className="logo-text transition-all duration-300 text-3xl tracking-tighter relative z-10 block hover-bounce">Vendofyx</span>
+            <Star className="orbit-star text-blue-500 fill-blue-500" size={10} style={{'--start-angle': '0deg', '--distance': '75px', '--duration': '3s'} as any} />
+            <Star className="orbit-star text-amber-500 fill-amber-500" size={12} style={{'--start-angle': '60deg', '--distance': '90px', '--duration': '2.5s'} as any} />
+            <Star className="orbit-star text-indigo-400 fill-indigo-400" size={8} style={{'--start-angle': '120deg', '--distance': '80px', '--duration': '3.5s'} as any} />
+            <Star className="orbit-star text-purple-500 fill-purple-500" size={11} style={{'--start-angle': '180deg', '--distance': '95px', '--duration': '2.8s'} as any} />
+            <Star className="orbit-star text-emerald-500 fill-emerald-500" size={9} style={{'--start-angle': '240deg', '--distance': '85px', '--duration': '3.2s'} as any} />
+            <Star className="orbit-star text-rose-500 fill-rose-500" size={10} style={{'--start-angle': '300deg', '--distance': '100px', '--duration': '2.7s'} as any} />
           </div>
         </Link>
 
@@ -119,7 +119,7 @@ const AppContent: React.FC<{
             <Route path="/dashboard" element={<PageWrapper>{session ? <Dashboard profile={profile} onProfileUpdate={(id) => loadProfile(id)} /> : <Navigate to="/auth" />}</PageWrapper>} />
             <Route path="/rate/:id" element={<PageWrapper><RatePage /></PageWrapper>} />
             <Route path="/terms" element={<PageWrapper><Terms /></PageWrapper>} />
-            <Route path="/privacy" element={<PageWrapper><Privacy /></PageWrapper>} />
+            <Route path="/privacy" element={<PageWrapper><Privacy /></Route>} />
             <Route path="/refund" element={<PageWrapper><Refund /></PageWrapper>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
