@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
-    <!-- Paddle.js v2 -->
     <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
     <style>
         :root {
@@ -24,7 +23,6 @@
             background: #f8fafc;
         }
 
-        /* High-End Preloader */
         #preloader {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -69,7 +67,6 @@
         }
     </style>
     <script>
-      // Sync Dark Mode early to prevent flash
       if (localStorage.getItem('vendofyx_theme') === 'dark' || 
           (!localStorage.getItem('vendofyx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -105,7 +102,6 @@
   }
 }
 </script>
-<!-- Self-executing loader that processes text/babel scripts -->
 <script type="module" src="https://esm.sh/run"></script>
 </head>
 <body class="bg-slate-50 dark:bg-charcoal-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -117,7 +113,6 @@
     <div id="root"></div>
 
     <script type="module">
-        // Hide preloader once react mounts successfully
         const checkReady = setInterval(() => {
           const root = document.getElementById('root');
           if (root && root.children.length > 0) {
@@ -129,12 +124,9 @@
             clearInterval(checkReady);
           }
         }, 100);
-
-        // Safety timeout: if it takes more than 10s, something is wrong but let's show the UI anyway
-        setTimeout(() => clearInterval(checkReady), 10000);
+        setTimeout(() => clearInterval(checkReady), 15000);
     </script>
     
-    <!-- Use text/babel so esm.sh/run can find and transpile this -->
     <script type="text/babel" src="./index.tsx"></script>
 </body>
 </html>

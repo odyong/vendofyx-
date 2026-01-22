@@ -24,7 +24,6 @@ const mountApp = () => {
   }
 };
 
-// Ensure DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', mountApp);
 } else {
